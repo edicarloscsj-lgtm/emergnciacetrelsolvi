@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sige - Gestão de Emergência e Inspeções</title>
     
-    <!-- Configurações PWA -->
+    <!-- Configurações PWA (Apontando para os arquivos externos do GitHub) -->
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" href="./logo.png">
     <link rel="apple-touch-icon" href="./logo.png">
@@ -19,7 +19,10 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 900: '#14532d',
+                        },
                         petro: { yellow: '#FFD700', green: '#008000' },
                         darkbg: '#0f172a', darkcard: '#1e293b'
                     }
@@ -37,14 +40,13 @@
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #FFD700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #16a34a; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .view-section { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
         .view-section.active { display: block; opacity: 1; }
         
         .input-base {
-            width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #cbd5e1;
+            width: 100%; padding: 0.7rem; border-radius: 0.5rem; border: 1px solid #cbd5e1;
             background-color: #ffffff; color: #0f172a; outline: none; transition: all 0.2s;
         }
         .input-base:focus { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
@@ -52,41 +54,1144 @@
         .dark .input-base:focus { border-color: #4ade80; }
         
         input[type="file"]::file-selector-button {
-            padding: 0.5rem 1rem; border-radius: 0.5rem; border: none;
-            background-color: #16a34a; color: white; cursor: pointer; transition: background-color 0.2s;
-            font-weight: bold;
+            padding: 0.5rem 1rem; border-radius: 0.375rem; border: none;
+            background-color: #16a34a; color: white; cursor: pointer; transition: background-color 0.2s; font-weight: bold;
         }
         input[type="file"]::file-selector-button:hover { background-color: #15803d; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-200 h-screen overflow-hidden flex flex-col md:flex-row">
+<body class="bg-slate-50 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-200 h-screen overflow-hidden flex flex-col md:flex-row">
 
     <!-- SPLASH SCREEN -->
-    <div id="splash-screen" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
-        <img src="./logo.png" alt="Logo" class="w-32 h-32 mb-6 object-contain drop-shadow-lg" onerror="this.src='https://placehold.co/200x200/008000/FFFFFF?text=SIGE'">
-        <h1 class="text-4xl font-extrabold tracking-wider text-petro-yellow">SIGE SMS</h1>
-        <p class="text-slate-300 mt-2 font-medium tracking-wide">Gestão de Emergência</p>
-        <div class="loader mt-10"></div>
-        <p class="text-sm mt-6 text-slate-400" id="splash-status">Inicializando sistema offline...</p>
+    <div id="splash-screen" class="fixed inset-0 bg-brand-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <div class="bg-white p-4 rounded-full mb-4 shadow-lg overflow-hidden flex items-center justify-center w-24 h-24">
+            <!-- Tenta carregar a logo. Se falhar, mostra o ícone de escudo padrão -->
+            <img src="./logo.png" alt="Logo" class="w-20 object-contain" onerror="this.style.display='none'; document.getElementById('splash-fallback-icon').style.display='block';">
+            <i id="splash-fallback-icon" data-lucide="shield-alert" class="w-12 h-12 text-brand-600 hidden"></i>
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-wider text-petro-yellow">SIGE</h1>
+        <p class="text-brand-100 mt-2 font-medium tracking-wide">Gestão de Emergência e SMS</p>
+        <div class="loader mt-8 border-t-petro-yellow"></div>
+        <p class="text-sm mt-4 text-brand-100/70">Inicializando sistema...</p>
     </div>
 
     <!-- TELA DE LOGIN -->
-    <div id="view-login" class="view-section absolute inset-0 z-[60] flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 overflow-y-auto">
-        <div class="max-w-md w-full bg-white dark:bg-darkcard rounded-3xl shadow-2xl overflow-hidden my-auto border border-slate-200 dark:border-slate-800">
-            <div class="bg-petro-green p-8 text-center text-white relative border-b-4 border-petro-yellow">
-                <img src="./logo.png" alt="Logo" class="w-20 h-20 mx-auto mb-4 object-contain bg-white rounded-xl p-2 shadow-inner" onerror="this.src='https://placehold.co/100x100/ffffff/008000?text=S'">
-                <h2 class="text-3xl font-bold">Acesso ao Sistema</h2>
-                <p class="text-brand-100 text-sm mt-2 opacity-90">Identifique-se para iniciar o plantão</p>
+    <div id="view-login" class="view-section absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 overflow-y-auto">
+        <div class="max-w-md w-full bg-white dark:bg-darkcard rounded-2xl shadow-2xl overflow-hidden my-8">
+            <div class="bg-gradient-to-r from-brand-700 to-brand-600 p-8 text-center text-white relative">
+                <div class="absolute top-4 right-4 flex gap-2">
+                    <span class="w-3 h-3 rounded-full bg-petro-yellow"></span>
+                    <span class="w-3 h-3 rounded-full bg-petro-green"></span>
+                </div>
+                <i data-lucide="hard-hat" class="w-16 h-16 mx-auto mb-3 text-petro-yellow"></i>
+                <h2 class="text-3xl font-bold">Acesso TST</h2>
+                <p class="text-brand-100 text-sm mt-2">Identifique-se para iniciar o plantão</p>
             </div>
-            <div class="p-6 md:p-8 space-y-6">
+            <div class="p-8 space-y-6">
                 <form id="login-form" class="space-y-5">
                     <div>
-                        <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Perfil de Acesso</label>
+                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Perfil</label>
                         <select id="login-role" class="input-base">
-                            <option value="operador">Técnico de Segurança / Bombeiro</option>
+                            <option value="operador">Técnico de Segurança / Emergência</option>
                             <option value="admin">Administrador do Sistema</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Equipe de Plantão</label>
-                        <select id="
+                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Equipe da Escala</label>
+                        <select id="login-team" class="input-base">
+                            <option value="Alfa">Equipe Alfa</option>
+                            <option value="Bravo">Equipe Bravo</option>
+                        </select>
+                    </div>
+                    <div id="login-password-group" class="hidden">
+                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Senha Administrativa</label>
+                        <input type="password" id="login-password" placeholder="admin123" class="input-base">
+                    </div>
+                    <div id="login-user-group">
+                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Nome / Matrícula</label>
+                        <input type="text" id="login-username" placeholder="Ex: João Silva" required class="input-base">
+                    </div>
+                    <button type="submit" class="w-full bg-petro-green hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                        <i data-lucide="log-in" class="w-5 h-5"></i> Iniciar Plantão
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY MOBILE (Fundo escuro quando a gaveta abre) -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+    <!-- HEADER MOBILE FAKE (Para abrir a gaveta) -->
+    <header class="md:hidden fixed top-0 left-0 w-full bg-slate-900 text-white h-16 z-20 flex justify-between items-center px-4 shadow-md">
+        <div class="flex items-center gap-3">
+            <div class="bg-brand-600 p-1 rounded-md"><i data-lucide="flame" class="w-5 h-5 text-petro-yellow"></i></div>
+            <span class="font-bold text-lg tracking-wide">SIGE</span>
+        </div>
+        <button id="mobile-menu-open" class="p-2 text-white hover:text-brand-300 focus:outline-none">
+            <i data-lucide="menu" class="w-7 h-7"></i>
+        </button>
+    </header>
+
+    <!-- SIDEBAR (Gaveta Mobile / Fixa no Desktop) -->
+    <aside id="sidebar" class="w-72 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out z-40 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 shadow-2xl md:shadow-xl">
+        
+        <div class="h-16 bg-slate-950 flex justify-between items-center px-4 shrink-0">
+            <div class="flex items-center gap-3 text-white">
+                <div class="bg-brand-600 p-1.5 rounded-lg"><i data-lucide="flame" class="w-5 h-5 text-petro-yellow"></i></div>
+                <span class="font-bold text-xl tracking-wide">SIGE <span class="text-brand-500 text-sm">SMS</span></span>
+            </div>
+            <!-- Botão Fechar Mobile -->
+            <button id="mobile-menu-close" class="md:hidden text-slate-400 hover:text-white p-2">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        
+        <div class="p-4 border-b border-slate-800 flex items-center gap-3 shrink-0 bg-slate-900/50" id="sidebar-profile">
+            <div class="w-12 h-12 rounded-full bg-brand-700 flex items-center justify-center text-white font-bold text-lg border-2 border-brand-500 shadow-inner" id="user-avatar">?</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-white truncate" id="user-name-display">Usuário</p>
+                <p class="text-xs text-brand-400 font-medium truncate" id="user-team-display">Equipe Alfa</p>
+            </div>
+        </div>
+
+        <nav id="sidebar-nav" class="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-slate-700">
+            <ul class="space-y-1.5 px-3">
+                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Visão Geral</li>
+                <li><a href="#" data-target="dashboard" class="nav-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-white bg-brand-600"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a></li>
+                
+                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Operacional</li>
+                <li><a href="#" data-target="activities" class="nav-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="clipboard-check" class="w-5 h-5 text-blue-400"></i> Atividades</a></li>
+                <li><a href="#" data-target="inspections" class="nav-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="search-check" class="w-5 h-5 text-green-400"></i> Inspeções (Rotina)</a></li>
+                
+                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Frota</li>
+                <li><a href="#" data-target="vehicles" class="nav-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="truck" class="w-5 h-5 text-amber-400"></i> Viaturas / Check</a></li>
+                
+                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6" id="nav-admin-header">Sistema</li>
+                <li id="nav-admin"><a href="#" data-target="admin" class="nav-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-300"><i data-lucide="settings" class="w-5 h-5"></i> Administração</a></li>
+            </ul>
+        </nav>
+
+        <div class="p-4 bg-slate-950 flex justify-between items-center shrink-0 border-t border-slate-800" id="sidebar-footer">
+            <button id="theme-toggle" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-yellow-400 transition-colors flex items-center justify-center">
+                <i data-lucide="sun" class="w-5 h-5"></i>
+            </button>
+            <button onclick="app.passarTurno()" class="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors font-medium bg-red-400/10 px-3 py-2 rounded-lg">
+                <i data-lucide="power" class="w-4 h-4"></i> Encerrar
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden bg-slate-100 dark:bg-darkbg mt-16 md:mt-0 w-full">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scroll-smooth" id="main-scroll">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="view-section active space-y-6 max-w-7xl mx-auto pb-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Painel Operacional</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" id="dash-date">Resumo do Plantão</p>
+                    </div>
+                    <button onclick="app.syncAll()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-all w-full md:w-auto justify-center font-bold">
+                        <i data-lucide="refresh-cw" class="w-5 h-5" id="sync-icon"></i> Sincronizar / Enviar Dados
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Atividades Totais</p>
+                        <h3 class="text-3xl font-bold mt-2" id="kpi-ativ-total">0</h3>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border-l-4 border-yellow-500">
+                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Insp. Pendentes/Andamento</p>
+                        <h3 class="text-3xl font-bold mt-2" id="kpi-insp-pendente">0</h3>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border-l-4 border-green-500">
+                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Insp. Concluídas</p>
+                        <h3 class="text-3xl font-bold mt-2" id="kpi-insp-concluida">0</h3>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm border-l-4 border-amber-500">
+                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">Registros Viaturas</p>
+                        <h3 class="text-3xl font-bold mt-2" id="kpi-viaturas">0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm">
+                        <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700 dark:text-slate-200"><i data-lucide="pie-chart" class="text-brand-500 w-5 h-5"></i> Status das Inspeções</h3>
+                        <div class="h-64 relative"><canvas id="chartStatus"></canvas></div>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-5 rounded-2xl shadow-sm">
+                        <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700 dark:text-slate-200"><i data-lucide="bar-chart-3" class="text-brand-500 w-5 h-5"></i> Inspeções por Área</h3>
+                        <div class="h-64 relative"><canvas id="chartAreas"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ATIVIDADES -->
+            <div id="view-activities" class="view-section space-y-6 max-w-7xl mx-auto pb-10">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm">
+                    <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="clipboard-check" class="text-blue-500"></i> Atividades</h2>
+                    <button onclick="app.openForm('activity')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 w-full sm:w-auto justify-center font-bold">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Nova Atividade
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left whitespace-nowrap">
+                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm">
+                                <tr>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Nº / Tipo</th>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Local (Área/Estação)</th>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Status</th>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-activities" class="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                                <!-- JS Populates -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-activities" class="hidden p-10 text-center text-slate-500">
+                        <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
+                        <p class="text-lg">Nenhuma atividade registrada.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: FORMULÁRIO ATIVIDADE -->
+            <div id="view-form-activity" class="view-section max-w-3xl mx-auto pb-10">
+                <button onclick="app.navigate('activities')" class="mb-4 text-slate-500 hover:text-brand-600 flex items-center gap-1 font-bold bg-white dark:bg-darkcard px-4 py-2 rounded-lg shadow-sm w-fit"><i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar</button>
+                
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-lg p-5 md:p-8 border-t-4 border-blue-500">
+                    <h2 class="text-xl font-bold mb-6 text-slate-800 dark:text-white" id="title-form-activity">Registrar Atividade</h2>
+                    
+                    <form id="form-activity" class="space-y-6">
+                        <input type="hidden" id="act-id">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Nº da Atividade</label>
+                                <input type="text" id="act-num" placeholder="Opcional ou Automático" class="input-base bg-slate-50 dark:bg-slate-800/50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Tipo da Atividade <span class="text-red-500">*</span></label>
+                                <select id="act-type" required class="input-base">
+                                    <option value="Acompanhamento">Acompanhamento</option>
+                                    <option value="Auditoria">Auditoria / Inspeção Geral</option>
+                                    <option value="Treinamento">Treinamento / Diálogo</option>
+                                    <option value="Atendimento">Atendimento à Emergência</option>
+                                    <option value="Manutenção">Apoio a Manutenção</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Descrição Breve <span class="text-red-500">*</span></label>
+                            <input type="text" id="act-desc" required placeholder="Ex: Acompanhamento de espaço confinado" class="input-base">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Área <span class="text-red-500">*</span></label>
+                                <select id="act-area" required class="input-base" onchange="app.updateStations('act-area', 'act-station')"></select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Estação / Local <span class="text-red-500">*</span></label>
+                                <select id="act-station" required class="input-base"></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Status <span class="text-red-500">*</span></label>
+                                <select id="act-status" required class="input-base font-bold">
+                                    <option value="Aberta">Aberta / Pendente</option>
+                                    <option value="Em Andamento">Em Andamento</option>
+                                    <option value="Concluída">Concluída</option>
+                                    <option value="Cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Evidência (Tirar Foto)</label>
+                                <!-- O accept="image/*" e capture="environment" abre direto a câmera traseira do celular -->
+                                <input type="file" id="act-photo" accept="image/*" capture="environment" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 dark:file:bg-slate-700 dark:file:text-white cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Observações / Não Conformidades</label>
+                            <textarea id="act-obs" rows="3" class="input-base" placeholder="Relate detalhes, recomendações..."></textarea>
+                        </div>
+                        
+                        <input type="hidden" id="act-date"> <!-- Escondido, setado via JS -->
+
+                        <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors text-lg flex justify-center items-center gap-2">
+                            <i data-lucide="save"></i> Salvar Atividade
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- VIEW: INSPEÇÕES -->
+            <div id="view-inspections" class="view-section space-y-6 max-w-7xl mx-auto pb-10">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm">
+                    <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="search-check" class="text-brand-500"></i> Inspeções (TAGs)</h2>
+                    <button onclick="app.openForm('inspection')" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 w-full sm:w-auto justify-center font-bold">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Nova Inspeção
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left whitespace-nowrap">
+                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm">
+                                <tr>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">TAG / Equipamento</th>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Local</th>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Freq.</th>
+                                    <th class="p-4 font-semibold border-b dark:border-slate-700">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-inspections" class="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                                <!-- JS Populates -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-inspections" class="hidden p-10 text-center text-slate-500">
+                        <i data-lucide="shield-off" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
+                        <p class="text-lg">Nenhuma inspeção de equipamento registrada hoje.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: FORMULÁRIO INSPEÇÃO (Etiqueta PetroReconcavo) -->
+            <div id="view-form-inspection" class="view-section max-w-3xl mx-auto pb-10">
+                <button onclick="app.navigate('inspections')" class="mb-4 text-slate-500 hover:text-brand-600 flex items-center gap-1 font-bold bg-white dark:bg-darkcard px-4 py-2 rounded-lg shadow-sm w-fit"><i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar</button>
+                
+                <div class="bg-white dark:bg-darkcard rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative">
+                    <!-- Cabeçalho Estilo Etiqueta -->
+                    <div class="bg-petro-green p-5 text-center text-white border-b-4 border-petro-yellow">
+                        <h2 class="text-xl font-black uppercase tracking-widest">Inspeção de Sistemas de Emergência</h2>
+                        <p class="text-sm opacity-90 font-medium">Registro Digital (Cartela TAG)</p>
+                    </div>
+                    
+                    <form id="form-inspection" class="p-5 md:p-8 space-y-6">
+                        <input type="hidden" id="insp-id">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div>
+                                <label class="block text-sm font-bold mb-2 text-slate-700 dark:text-slate-300">Nº da TAG (Identificação) <span class="text-red-500">*</span></label>
+                                <input type="text" id="insp-tag" required placeholder="Ex: 0572" class="input-base text-2xl font-black text-red-600 dark:text-red-400 text-center tracking-widest border-2 border-slate-400 dark:border-slate-500 h-14 uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2 text-slate-700 dark:text-slate-300">Frequência da Inspeção <span class="text-red-500">*</span></label>
+                                <select id="insp-freq" required class="input-base font-bold text-lg h-14">
+                                    <option value="Semanal">Semanal</option>
+                                    <option value="Quinzenal">Quinzenal</option>
+                                    <option value="Mensal">Mensal</option>
+                                    <option value="Trimestral">Trimestral</option>
+                                    <option value="Semestral">Semestral</option>
+                                    <option value="Anual">Anual</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300">Equipamento <span class="text-red-500">*</span></label>
+                            <select id="insp-equip" required class="input-base font-medium"></select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Área <span class="text-red-500">*</span></label>
+                                <select id="insp-area" required class="input-base" onchange="app.updateStations('insp-area', 'insp-station')"></select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Estação <span class="text-red-500">*</span></label>
+                                <select id="insp-station" required class="input-base"></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 border-t dark:border-slate-700 pt-5 mt-5">
+                            <div>
+                                <label class="block text-sm font-black mb-2 text-slate-700 dark:text-slate-300 uppercase">Status Final <span class="text-red-500">*</span></label>
+                                <select id="insp-status" required class="input-base font-bold text-lg h-14 border-2 border-slate-300">
+                                    <option value="Conforme">✅ Conforme (Em Ordem)</option>
+                                    <option value="Não Conforme">❌ Não Conforme (Avaria)</option>
+                                    <option value="Faltante">⚠️ Faltante / Manutenção</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Foto da Etiqueta/Anomalia</label>
+                                <input type="file" id="insp-photo" accept="image/*" capture="environment" class="w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-green-100 file:text-green-800 hover:file:bg-green-200 dark:file:bg-slate-700 dark:file:text-white cursor-pointer h-14">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Observações / Motivo da Anomalia</label>
+                            <textarea id="insp-obs" rows="3" class="input-base" placeholder="Descreva problemas com o equipamento ou preenchimento da TAG..."></textarea>
+                        </div>
+
+                        <div class="bg-petro-yellow/20 border border-petro-yellow/40 p-4 rounded-xl text-sm text-slate-800 dark:text-slate-200 font-medium text-center shadow-inner">
+                            <i data-lucide="alert-triangle" class="inline w-5 h-5 text-amber-600 mr-1"></i> <strong>ATENÇÃO!</strong> Ao usar ou encontrar avaria neste equipamento, comunique de imediato a área de SMS.
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black uppercase tracking-wide rounded-xl shadow-lg transition-colors text-lg flex justify-center items-center gap-2">
+                            <i data-lucide="check-circle" class="w-6 h-6"></i> Registrar Baixa
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- VIEW: VIATURAS -->
+            <div id="view-vehicles" class="view-section space-y-6 max-w-7xl mx-auto pb-10">
+                <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm">
+                    <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="truck" class="text-amber-500"></i> Frota / Viaturas</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <!-- Formulário Checklist -->
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-md p-5 md:p-8 border-t-4 border-amber-500">
+                        <h3 class="text-lg font-bold mb-5 flex items-center gap-2 text-slate-800 dark:text-white"><i data-lucide="clipboard-list" class="w-5 h-5 text-amber-500"></i> Checklist / Passagem de Plantão</h3>
+                        <form id="form-checklist" class="space-y-5">
+                            <input type="text" id="chk-vtr" placeholder="Placa / Prefixo (Ex: VTR-01)" required class="input-base uppercase font-black text-amber-600 text-center tracking-widest text-lg">
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 mb-1 block">Odômetro Inicial</label>
+                                    <input type="number" id="chk-km-in" placeholder="Ex: 15400" required class="input-base font-bold">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 mb-1 block">Nível de Combustível</label>
+                                    <select id="chk-fuel" required class="input-base font-bold">
+                                        <option value="Cheio">Tanque Cheio</option>
+                                        <option value="3/4">3/4 de Tanque</option>
+                                        <option value="1/2">1/2 Tanque</option>
+                                        <option value="1/4">1/4 de Tanque</option>
+                                        <option value="Reserva">Reserva</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <p class="text-sm font-bold mb-4 text-slate-700 dark:text-slate-300 border-b dark:border-slate-600 pb-2">Itens Inspecionados (Marque se OK)</p>
+                                <div class="grid grid-cols-2 gap-y-4 text-sm font-medium">
+                                    <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="c-pneu" class="w-5 h-5 accent-amber-500 rounded" checked> Pneus/Estepe</label>
+                                    <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="c-luz" class="w-5 h-5 accent-amber-500 rounded" checked> Faróis/Luzes</label>
+                                    <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="c-giro" class="w-5 h-5 accent-amber-500 rounded" checked> Giroflex/Sirene</label>
+                                    <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="c-kit" class="w-5 h-5 accent-amber-500 rounded" checked> Kit Emergência</label>
+                                    <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="c-doc" class="w-5 h-5 accent-amber-500 rounded" checked> Documentação</label>
+                                    <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="c-radio" class="w-5 h-5 accent-amber-500 rounded" checked> Rádio Com.</label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 mb-1 block">Status Operacional</label>
+                                <select id="chk-status" required class="input-base font-bold text-lg">
+                                    <option value="Conforme">🟢 Operante (Conforme)</option>
+                                    <option value="Não Conforme">🔴 Inoperante / Restrição</option>
+                                </select>
+                            </div>
+
+                            <textarea id="chk-obs" rows="2" placeholder="Observações, avarias na lataria, etc..." class="input-base"></textarea>
+
+                            <button type="submit" class="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-colors text-lg">Salvar Checklist</button>
+                        </form>
+                    </div>
+
+                    <!-- Formulário Abastecimento -->
+                    <div class="bg-white dark:bg-darkcard rounded-2xl shadow-md p-5 md:p-8 border-t-4 border-indigo-500">
+                        <h3 class="text-lg font-bold mb-5 flex items-center gap-2 text-slate-800 dark:text-white"><i data-lucide="fuel" class="w-5 h-5 text-indigo-500"></i> Registro de Abastecimento</h3>
+                        <form id="form-refuel" class="space-y-5">
+                            <input type="text" id="ref-vtr" placeholder="Placa / Prefixo da Viatura" required class="input-base uppercase font-bold text-indigo-600">
+                            <input type="text" id="ref-driver" placeholder="Nome do Motorista" required class="input-base">
+                            
+                            <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Odômetro (KM)</label>
+                                    <input type="number" id="ref-km" required class="input-base font-bold">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Litros Abastecidos</label>
+                                    <input type="number" step="0.01" id="ref-liters" required class="input-base font-bold text-indigo-600">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Valor Total (R$)</label>
+                                    <input type="number" step="0.01" id="ref-value" required class="input-base font-bold text-green-600">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Saldo do Cartão</label>
+                                    <input type="number" step="0.01" id="ref-balance" class="input-base" placeholder="Opcional">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-4 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-colors text-lg">Registrar Abastecimento</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ADMIN -->
+            <div id="view-admin" class="view-section space-y-6 max-w-7xl mx-auto pb-10">
+                <div class="bg-white dark:bg-darkcard p-4 rounded-2xl shadow-sm">
+                    <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="settings" class="text-slate-500"></i> Painel Administrativo</h2>
+                </div>
+                
+                <div class="bg-white dark:bg-darkcard p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2 dark:border-slate-700">Integração e Exportação Offline</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                        Em caso de falha de internet ou de sincronização com o banco de dados principal, você pode forçar o download manual de todo o histórico salvo na memória deste aparelho gerando uma planilha Excel.
+                    </p>
+                    <div class="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <button onclick="app.exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl shadow-md flex justify-center items-center gap-2 font-bold w-full sm:w-auto">
+                            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Gerar Planilha Excel (.xlsx)
+                        </button>
+                        <a href="https://docs.google.com/spreadsheets/d/1se_-XDwXavPV7hypRbvSBNjMqnzBaj3_YCT8gKglVGQ" target="_blank" class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 px-5 py-3 rounded-xl flex justify-center items-center gap-2 font-bold w-full sm:w-auto transition-colors">
+                            <i data-lucide="external-link" class="w-5 h-5"></i> Abrir Planilha Google
+                        </a>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm">
+                        <h3 class="text-lg font-bold mb-4">Estrutura de Áreas (Cadastros)</h3>
+                        <div class="max-h-60 overflow-y-auto pr-2 text-sm custom-scrollbar" id="admin-areas-list">
+                            <!-- JS Populates -->
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold mb-4 text-red-500 flex items-center gap-2"><i data-lucide="hard-drive"></i> Memória Local do Aparelho</h3>
+                            <ul class="space-y-4 text-sm divide-y dark:divide-slate-700">
+                                <li class="flex justify-between pt-2"><span class="text-slate-500 font-medium">Atividades salvas:</span> <span id="admin-c-act" class="font-bold text-lg bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">0</span></li>
+                                <li class="flex justify-between pt-2"><span class="text-slate-500 font-medium">Inspeções salvas:</span> <span id="admin-c-insp" class="font-bold text-lg bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">0</span></li>
+                                <li class="flex justify-between pt-2"><span class="text-slate-500 font-medium">Viaturas salvas:</span> <span id="admin-c-veh" class="font-bold text-lg bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">0</span></li>
+                            </ul>
+                        </div>
+                        <button onclick="app.clearCache()" class="mt-8 w-full py-3 border-2 border-red-500/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors font-bold flex items-center justify-center gap-2">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i> Limpar Aparelho (Apagar Tudo)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-4 right-4 md:right-8 bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl transform -translate-y-full opacity-0 transition-all duration-300 z-[9999] flex items-center gap-3 border-l-4">
+        <div id="toast-icon"></div>
+        <span id="toast-msg" class="font-medium text-sm md:text-base">Mensagem</span>
+    </div>
+
+    <script>
+        /**
+         * CONFIGURAÇÃO E DADOS BASE
+         */
+        // URL gerada pelo Google Apps Script
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz9b0a-6fnvG-Db9lVej1nMO3EhMOl8VOAyY43IAW3U0_TQVbtGH0lRG8anC4KFEJep/exec"; 
+
+        const DEFAULT_CONFIG = {
+            areas: {
+                "Sul": ["Nova Cassarongongo (Principal)", "Ilhas", "Gomo", "Gomox3", "NFC", "NFC 15", "Ajax"],
+                "Centro": ["São Roque (Principal)", "Ouro Preto", "Búfalo", "Remanso", "Jacuípe", "São Pedro", "Sussuarana", "Universidade Petro", "Centro Logístico"],
+                "Norte": ["Miranga (Principal)", "Miranga B", "Miranga C", "Miranga EIA"],
+                "Sondas": ["Equipe Itinerante / Apoio"]
+            },
+            equipments: [
+                "Bomba de Incêndio", "Sist. de Detecção e Alarme", "Abrigo de Mangueira / Mangueiras",
+                "Viat/Und Comb Inc. (VCI/UCI)", "Chuveiro e Lava-Olhos", "Conjunto Autônomo",
+                "Biruta / Indicador de Vento", "Extintor de Incêndio", "Hidrante",
+                "Sist. Supressão por Água", "Válvula de Rede de Incêndio", "Portão de Emergência",
+                "Maca / Prancha Rígida", "Roupa de Aproximação", "Sist. Conting. (RTI + Cj. MB)",
+                "Kit de Primeiros Socorros", "Kit de Evasão / Resgate", "Sist. Câmara de Espuma",
+                "Carretinha LGE", "Canhão Monitor Portátil/Fixo", "Detector de Gás", "DEA"
+            ]
+        };
+
+        // --- REGISTRO DO SERVICE WORKER (Para funcionar o PWA e Offline) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW PWA Pronto:', reg.scope))
+                    .catch(err => console.log('Aviso SW (Tranquilo se estiver rodando local sem servidor):', err));
+            });
+        }
+
+        class App {
+            constructor() {
+                this.state = { user: null, role: null, team: 'Alfa', theme: localStorage.getItem('sige_theme') || 'light' };
+                this.data = { activities: [], inspections: [], vehicles: [] };
+                this.charts = {};
+            }
+
+            async init() {
+                // Failsafe 1: Garante que a splash screen vai sumir independente de erro de rede ou de bibliotecas
+                const safeUnlock = () => {
+                    const splash = document.getElementById('splash-screen');
+                    if (splash) {
+                        splash.style.opacity = '0';
+                        setTimeout(() => splash.style.display = 'none', 500);
+                    }
+                    try {
+                        const sessionStr = localStorage.getItem('sige_session');
+                        const session = sessionStr ? JSON.parse(sessionStr) : null;
+                        if (session && session.user) {
+                            this.doLogin(session.user, session.role, session.team, false);
+                        } else {
+                            this.showLogin();
+                        }
+                    } catch(err) {
+                        console.error("Erro de sessão, forçando login limpo", err);
+                        localStorage.removeItem('sige_session');
+                        this.showLogin();
+                    }
+                };
+
+                // Failsafe 2: Tenta carregar dados e gerar ícones
+                try {
+                    this.loadData();
+                    this.setupTheme();
+                    this.populateDropdowns();
+                    this.setupListeners();
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                } catch (error) {
+                    console.error("Erro não fatal durante inicialização:", error);
+                }
+
+                // Libera a tela de load em no máximo 1.2 segundos
+                setTimeout(safeUnlock, 1200);
+            }
+
+            loadData() {
+                try {
+                    const act = localStorage.getItem('sige_act');
+                    const insp = localStorage.getItem('sige_insp');
+                    const veh = localStorage.getItem('sige_veh');
+                    
+                    if(act) this.data.activities = JSON.parse(act);
+                    if(insp) this.data.inspections = JSON.parse(insp);
+                    if(veh) this.data.vehicles = JSON.parse(veh);
+                } catch (e) {
+                    console.error("Memória local corrompida. Ignorando.");
+                }
+            }
+
+            saveData() {
+                try {
+                    localStorage.setItem('sige_act', JSON.stringify(this.data.activities));
+                    localStorage.setItem('sige_insp', JSON.stringify(this.data.inspections));
+                    localStorage.setItem('sige_veh', JSON.stringify(this.data.vehicles));
+                } catch (e) {
+                    this.showToast('Memória cheia! Sincronize os dados.', 'error');
+                }
+            }
+
+            showLogin() {
+                document.getElementById('view-login').style.display = 'flex';
+                setTimeout(() => document.getElementById('view-login').classList.add('active'), 10);
+            }
+
+            doLogin(username, role, team, save = true) {
+                if (!username.trim()) return this.showToast("Informe seu nome", "error");
+                if (role === 'admin' && document.getElementById('login-password').value !== 'admin123' && save) {
+                    return this.showToast("Senha incorreta!", "error");
+                }
+                
+                this.state.user = username; this.state.role = role; this.state.team = team;
+                if(save) localStorage.setItem('sige_session', JSON.stringify({ user: username, role, team }));
+
+                document.getElementById('user-name-display').textContent = username;
+                document.getElementById('user-team-display').textContent = `Equipe ${team} • ${role === 'admin'?'Admin':'TST'}`;
+                document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
+
+                document.getElementById('nav-admin').style.display = role === 'admin' ? 'flex' : 'none';
+                document.getElementById('nav-admin-header').style.display = role === 'admin' ? 'block' : 'none';
+
+                document.getElementById('view-login').classList.remove('active');
+                setTimeout(() => document.getElementById('view-login').style.display = 'none', 300);
+                
+                this.navigate('dashboard');
+                if(save) this.showToast(`Plantão iniciado, ${username}!`, "success");
+            }
+
+            passarTurno() {
+                if(confirm("Deseja encerrar o plantão e sair?")) {
+                    localStorage.removeItem('sige_session');
+                    location.reload();
+                }
+            }
+
+            toggleMobileMenu(forceClose = false) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('mobile-overlay');
+                
+                if (forceClose || !sidebar.classList.contains('-translate-x-full')) {
+                    // Fecha gaveta
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('opacity-0');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                } else {
+                    // Abre gaveta
+                    overlay.classList.remove('hidden');
+                    // Timeout pequeno para CSS transition
+                    setTimeout(() => {
+                        overlay.classList.remove('opacity-0');
+                        sidebar.classList.remove('-translate-x-full');
+                    }, 10);
+                }
+            }
+
+            navigate(viewId) {
+                this.toggleMobileMenu(true); // Fecha gaveta mobile ao navegar
+                
+                document.querySelectorAll('.view-section').forEach(el => {
+                    el.classList.remove('active');
+                    if(el.id !== 'view-login') setTimeout(() => { if(!el.classList.contains('active')) el.style.display = 'none'; }, 200);
+                });
+
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('bg-brand-600', 'text-white');
+                    link.classList.add('text-slate-300', 'hover:bg-slate-800');
+                });
+                const activeNav = document.querySelector(`[data-target="${viewId}"]`);
+                if(activeNav) {
+                    activeNav.classList.remove('text-slate-300', 'hover:bg-slate-800');
+                    activeNav.classList.add('bg-brand-600', 'text-white');
+                }
+
+                const targetView = document.getElementById(`view-${viewId}`);
+                if(targetView) {
+                    targetView.style.display = 'block';
+                    setTimeout(() => targetView.classList.add('active'), 50);
+                    document.getElementById('main-scroll').scrollTop = 0;
+                }
+
+                if(viewId === 'dashboard') this.renderDashboard();
+                if(viewId === 'activities') this.renderActivities();
+                if(viewId === 'inspections') this.renderInspections();
+                if(viewId === 'admin') this.renderAdmin();
+            }
+
+            openForm(type, id = null) {
+                if(type === 'activity') {
+                    document.getElementById('form-activity').reset();
+                    document.getElementById('act-date').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('act-id').value = id || '';
+                    this.updateStations('act-area', 'act-station');
+                    this.navigate('form-activity');
+                } else if(type === 'inspection') {
+                    document.getElementById('form-inspection').reset();
+                    document.getElementById('insp-id').value = id || '';
+                    this.updateStations('insp-area', 'insp-station');
+                    this.navigate('form-inspection');
+                }
+            }
+
+            populateDropdowns() {
+                const areasHTML = Object.keys(DEFAULT_CONFIG.areas).map(a => `<option value="${a}">${a}</option>`).join('');
+                document.getElementById('act-area').innerHTML = areasHTML;
+                document.getElementById('insp-area').innerHTML = areasHTML;
+                
+                const equipHTML = DEFAULT_CONFIG.equipments.map(e => `<option value="${e}">${e}</option>`).join('');
+                document.getElementById('insp-equip').innerHTML = equipHTML;
+            }
+
+            updateStations(areaId, stationId) {
+                const area = document.getElementById(areaId).value;
+                const stations = DEFAULT_CONFIG.areas[area] || [];
+                document.getElementById(stationId).innerHTML = stations.map(s => `<option value="${s}">${s}</option>`).join('');
+            }
+
+            async compressImage(file) {
+                return new Promise((resolve) => {
+                    if(!file) return resolve(null);
+                    
+                    // Validação extra se não for imagem
+                    if (!file.type.match(/image.*/)) {
+                        this.showToast('O arquivo selecionado não é uma imagem', 'error');
+                        return resolve(null);
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800; // Limite de tamanho em pixels para salvar banda
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > MAX_WIDTH) {
+                                height = Math.round((height * MAX_WIDTH) / width);
+                                width = MAX_WIDTH;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // Comprime a 60% de qualidade jpeg
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                            resolve(dataUrl);
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            async saveActivity(e) {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const prevText = btn.innerHTML;
+                btn.innerHTML = '<i class="loader inline-block w-5 h-5 border-white"></i> Processando...';
+                
+                const id = document.getElementById('act-id').value || `ACT_${Date.now()}`;
+                const fileInput = document.getElementById('act-photo');
+                // Aplica compressão antes de salvar
+                const photoBase64 = fileInput.files[0] ? await this.compressImage(fileInput.files[0]) : null;
+
+                const data = {
+                    id, type: 'atividade',
+                    number: document.getElementById('act-num').value || id,
+                    actType: document.getElementById('act-type').value,
+                    desc: document.getElementById('act-desc').value,
+                    area: document.getElementById('act-area').value,
+                    station: document.getElementById('act-station').value,
+                    dateProg: document.getElementById('act-date').value || new Date().toISOString().split('T')[0],
+                    status: document.getElementById('act-status').value,
+                    obs: document.getElementById('act-obs').value,
+                    responsible: this.state.user, team: this.state.team,
+                    timestamp: new Date().toISOString(),
+                    photoBase64: photoBase64 // Guarda a string comprimida para enviar
+                };
+
+                const idx = this.data.activities.findIndex(a => a.id === id);
+                if(idx > -1) this.data.activities[idx] = data; else this.data.activities.push(data);
+                
+                this.saveData();
+                btn.innerHTML = prevText;
+                this.showToast('Atividade salva com sucesso!', 'success');
+                this.navigate('activities');
+                this.trySync(data);
+            }
+
+            async saveInspection(e) {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const prevText = btn.innerHTML;
+                btn.innerHTML = '<i class="loader inline-block w-5 h-5 border-white border-t-white"></i> Processando...';
+
+                const id = document.getElementById('insp-id').value || `INSP_${Date.now()}`;
+                const fileInput = document.getElementById('insp-photo');
+                const photoBase64 = fileInput.files[0] ? await this.compressImage(fileInput.files[0]) : null;
+
+                const data = {
+                    id, type: 'inspecao',
+                    tag: document.getElementById('insp-tag').value.toUpperCase(),
+                    freq: document.getElementById('insp-freq').value,
+                    equip: document.getElementById('insp-equip').value,
+                    area: document.getElementById('insp-area').value,
+                    station: document.getElementById('insp-station').value,
+                    status: document.getElementById('insp-status').value,
+                    obs: document.getElementById('insp-obs').value,
+                    responsible: this.state.user, team: this.state.team,
+                    timestamp: new Date().toISOString(),
+                    photoBase64: photoBase64
+                };
+
+                const idx = this.data.inspections.findIndex(a => a.id === id);
+                if(idx > -1) this.data.inspections[idx] = data; else this.data.inspections.push(data);
+                
+                this.saveData();
+                btn.innerHTML = prevText;
+                this.showToast('Inspeção Registrada!', 'success');
+                this.navigate('inspections');
+                this.trySync(data);
+            }
+
+            saveChecklist(e) {
+                e.preventDefault();
+                const checks = ['c-pneu','c-luz','c-giro','c-kit','c-doc','c-radio'].filter(c=>document.getElementById(c).checked).length;
+                const data = {
+                    id: `CHK_${Date.now()}`, type: 'viatura_checklist',
+                    vtr: document.getElementById('chk-vtr').value,
+                    km: document.getElementById('chk-km-in').value,
+                    fuel: document.getElementById('chk-fuel').value,
+                    status: document.getElementById('chk-status').value,
+                    obs: document.getElementById('chk-obs').value + ` [Itens OK: ${checks}/6]`,
+                    responsible: this.state.user, team: this.state.team,
+                    timestamp: new Date().toISOString()
+                };
+                this.data.vehicles.push(data); this.saveData();
+                this.showToast('Checklist salvo!', 'success');
+                document.getElementById('form-checklist').reset();
+                this.trySync(data);
+            }
+
+            saveRefuel(e) {
+                e.preventDefault();
+                const data = {
+                    id: `REF_${Date.now()}`, type: 'viatura_abastecimento',
+                    vtr: document.getElementById('ref-vtr').value,
+                    driver: document.getElementById('ref-driver').value,
+                    km: document.getElementById('ref-km').value,
+                    liters: document.getElementById('ref-liters').value,
+                    value: document.getElementById('ref-value').value,
+                    balance: document.getElementById('ref-balance').value,
+                    team: this.state.team, timestamp: new Date().toISOString()
+                };
+                this.data.vehicles.push(data); this.saveData();
+                this.showToast('Abastecimento registrado!', 'success');
+                document.getElementById('form-refuel').reset();
+                this.trySync(data);
+            }
+
+            async trySync(payload) {
+                if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") return;
+                
+                try {
+                    // Envia payload como text/plain para não esbarrar em restrição CORS
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                } catch(e) { console.warn('Falha silenciosa ao sincronizar online. Salvo no cache.', e); }
+            }
+
+            syncAll() {
+                const icon = document.getElementById('sync-icon');
+                icon.classList.add('animate-spin');
+                
+                if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
+                    setTimeout(() => {
+                        icon.classList.remove('animate-spin');
+                        this.showToast('Conecte a Planilha no código fonte!', 'error');
+                    }, 1000);
+                    return;
+                }
+
+                // Push de todos os dados locais
+                Promise.all([
+                    ...this.data.activities.map(a => this.trySync(a)),
+                    ...this.data.inspections.map(i => this.trySync(i)),
+                    ...this.data.vehicles.map(v => this.trySync(v))
+                ]).then(() => {
+                    setTimeout(() => {
+                        icon.classList.remove('animate-spin');
+                        this.showToast('Sincronização forçada efetuada com sucesso!', 'success');
+                    }, 1000);
+                });
+            }
+
+            renderDashboard() {
+                document.getElementById('dash-date').textContent = `${new Date().toLocaleDateString('pt-BR')} • ${this.state.team} • ${this.state.user}`;
+                
+                const stats = { actTotal: this.data.activities.length, inspConforme: 0, inspPendente: 0, vehTotal: this.data.vehicles.length };
+                const areaCounts = {};
+                
+                this.data.inspections.forEach(i => {
+                    if(i.status === 'Conforme') stats.inspConforme++; else stats.inspPendente++;
+                    areaCounts[i.area] = (areaCounts[i.area] || 0) + 1;
+                });
+                
+                document.getElementById('kpi-ativ-total').textContent = stats.actTotal;
+                document.getElementById('kpi-insp-concluida').textContent = stats.inspConforme;
+                document.getElementById('kpi-insp-pendente').textContent = stats.inspPendente;
+                document.getElementById('kpi-viaturas').textContent = stats.vehTotal;
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#cbd5e1' : '#475569';
+                Chart.defaults.color = textColor;
+
+                if(this.charts.status) this.charts.status.destroy();
+                if(this.charts.areas) this.charts.areas.destroy();
+
+                const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+                this.charts.status = new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Conforme', 'Anomalias/Faltante'],
+                        datasets: [{ data: [stats.inspConforme, stats.inspPendente], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
+                    },
+                    options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+                });
+
+                const ctxAreas = document.getElementById('chartAreas').getContext('2d');
+                this.charts.areas = new Chart(ctxAreas, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(areaCounts).length ? Object.keys(areaCounts).map(a => a.substring(0,8)) : ['N/A'],
+                        datasets: [{ label: 'Inspeções', data: Object.keys(areaCounts).length ? Object.values(areaCounts) : [0], backgroundColor: '#FFD700', borderRadius: 4 }]
+                    },
+                    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: isDark?'#334155':'#e2e8f0'} }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            renderActivities() {
+                const tbody = document.getElementById('table-activities');
+                const empty = document.getElementById('empty-activities');
+                tbody.innerHTML = '';
+                
+                if(this.data.activities.length === 0) { empty.classList.remove('hidden'); tbody.parentElement.classList.add('hidden'); return; }
+                empty.classList.add('hidden'); tbody.parentElement.classList.remove('hidden');
+
+                const sorted = [...this.data.activities].reverse();
+                sorted.forEach(a => {
+                    let sColor = a.status === 'Concluída' ? 'text-green-600 bg-green-100' : (a.status === 'Em Andamento' ? 'text-yellow-600 bg-yellow-100' : 'text-slate-600 bg-slate-100');
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="p-4"><p class="font-bold text-slate-800 dark:text-slate-200">${a.number}</p><p class="text-xs text-slate-500">${a.actType}</p></td>
+                            <td class="p-4"><p class="font-medium text-slate-800 dark:text-slate-200">${a.area}</p><p class="text-xs text-slate-500 max-w-[150px] truncate">${a.station}</p></td>
+                            <td class="p-4"><span class="px-2.5 py-1 text-xs font-bold rounded-lg ${sColor}">${a.status}</span></td>
+                            <td class="p-4 text-slate-500 text-sm font-medium">${a.dateProg.split('-').reverse().join('/')}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            renderInspections() {
+                const tbody = document.getElementById('table-inspections');
+                const empty = document.getElementById('empty-inspections');
+                tbody.innerHTML = '';
+                
+                if(this.data.inspections.length === 0) { empty.classList.remove('hidden'); tbody.parentElement.classList.add('hidden'); return; }
+                empty.classList.add('hidden'); tbody.parentElement.classList.remove('hidden');
+
+                const sorted = [...this.data.inspections].reverse();
+                sorted.forEach(i => {
+                    let sColor = i.status === 'Conforme' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="p-4"><p class="font-black text-red-500 tracking-wider">${i.tag}</p><p class="text-xs text-slate-500 max-w-[150px] truncate" title="${i.equip}">${i.equip}</p></td>
+                            <td class="p-4"><p class="font-medium text-slate-800 dark:text-slate-200">${i.area}</p><p class="text-xs text-slate-500 max-w-[150px] truncate">${i.station}</p></td>
+                            <td class="p-4 text-slate-500 text-sm font-bold">${i.freq}</td>
+                            <td class="p-4"><span class="px-2.5 py-1 text-xs font-bold rounded-lg ${sColor}">${i.status}</span></td>
+                        </tr>
+                    `;
+                });
+            }
+
+            renderAdmin() {
+                document.getElementById('admin-c-act').textContent = this.data.activities.length;
+                document.getElementById('admin-c-insp').textContent = this.data.inspections.length;
+                document.getElementById('admin-c-veh').textContent = this.data.vehicles.length;
+
+                const areasDiv = document.getElementById('admin-areas-list');
+                areasDiv.innerHTML = Object.entries(DEFAULT_CONFIG.areas).map(([a, sts]) => `
+                    <div class="mb-4">
+                        <strong class="text-brand-600 dark:text-brand-400 block border-b dark:border-slate-700 pb-1 mb-2 uppercase text-xs tracking-wider">${a}</strong>
+                        <ul class="text-slate-600 dark:text-slate-400 pl-2 list-disc list-inside">
+                            ${sts.map(s => `<li>${s}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            }
+
+            setupTheme() {
+                if(this.state.theme === 'dark') document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            }
+
+            toggleTheme() {
+                this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('sige_theme', this.state.theme);
+                this.setupTheme();
+                if(document.getElementById('view-dashboard').classList.contains('active')) this.renderDashboard();
+            }
+
+            showToast(msg, type = 'info') {
+                const toast = document.getElementById('toast');
+                document.getElementById('toast-msg').textContent = msg;
+                const iconHTML = type === 'error' ? '<i data-lucide="alert-triangle" class="w-6 h-6 text-red-400"></i>' : '<i data-lucide="check-circle" class="w-6 h-6 text-green-400"></i>';
+                document.getElementById('toast-icon').innerHTML = iconHTML;
+                toast.className = `fixed top-4 right-4 md:right-8 px-5 py-4 rounded-xl shadow-2xl z-[9999] flex items-center gap-3 border-l-4 transition-all duration-300 transform ${type==='error'?'bg-slate-900 border-red-500 text-white':'bg-slate-900 border-green-500 text-white'}`;
+                
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                setTimeout(() => { toast.classList.remove('-translate-y-full', 'opacity-0'); toast.classList.add('translate-y-0'); }, 10);
+                setTimeout(() => { toast.classList.add('-translate-y-full', 'opacity-0'); toast.classList.remove('translate-y-0'); }, 3500);
+            }
+
+            clearCache() {
+                if(confirm("ATENÇÃO: Apagar a memória excluirá todas as inspeções e atividades salvas no seu celular que ainda não subiram pra nuvem. Deseja prosseguir?")) {
+                    localStorage.removeItem('sige_act');
+                    localStorage.removeItem('sige_insp');
+                    localStorage.removeItem('sige_veh');
+                    this.data = { activities: [], inspections: [], vehicles: [] };
+                    this.renderAdmin();
+                    this.showToast('Memória limpa com sucesso.', 'success');
+                }
+            }
+
+            exportToExcel() {
+                try {
+                    const wb = XLSX.utils.book_new();
+                    
+                    const createSheet = (data, name) => {
+                        if(data.length > 0) {
+                            const ws = XLSX.utils.json_to_sheet(data.map(d => {
+                                let clone = {...d}; delete clone.id; delete clone.photoBase64;
+                                clone.data_hora = new Date(clone.timestamp).toLocaleString('pt-BR');
+                                delete clone.timestamp; return clone;
+                            }));
+                            XLSX.utils.book_append_sheet(wb, ws, name);
+                        }
+                    };
+
+                    createSheet(this.data.activities, "Atividades");
+                    createSheet(this.data.inspections, "Inspeções TAG");
+                    createSheet(this.data.vehicles.filter(v=>v.type==='viatura_checklist'), "Checklist VTR");
+                    createSheet(this.data.vehicles.filter(v=>v.type==='viatura_abastecimento'), "Abastecimento");
+
+                    if(wb.SheetNames.length === 0) return this.showToast('Nenhum dado gerado no turno.', 'error');
+
+                    XLSX.writeFile(wb, `SIGE_Backup_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    this.showToast('Backup Excel gerado!', 'success');
+                } catch(e) { console.error(e); this.showToast('Erro ao exportar.', 'error'); }
+            }
+
+            setupListeners() {
+                // Eventos de Autenticação
+                document.getElementById('login-role').addEventListener('change', (e) => {
+                    document.getElementById('login-password-group').style.display = e.target.value === 'admin' ? 'block' : 'none';
+                });
+                document.getElementById('login-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.doLogin(document.getElementById('login-username').value, document.getElementById('login-role').value, document.getElementById('login-team').value);
+                });
+
+                // Eventos de Navegação
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => { e.preventDefault(); this.navigate(e.currentTarget.getAttribute('data-target')); });
+                });
+
+                // Controles e Menus
+                document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
+                document.getElementById('mobile-menu-open').addEventListener('click', () => this.toggleMobileMenu());
+                document.getElementById('mobile-menu-close').addEventListener('click', () => this.toggleMobileMenu(true));
+                document.getElementById('mobile-overlay').addEventListener('click', () => this.toggleMobileMenu(true));
+
+                // Submissão de Formulários
+                document.getElementById('form-activity').addEventListener('submit', (e) => this.saveActivity(e));
+                document.getElementById('form-inspection').addEventListener('submit', (e) => this.saveInspection(e));
+                document.getElementById('form-checklist').addEventListener('submit', (e) => this.saveChecklist(e));
+                document.getElementById('form-refuel').addEventListener('submit', (e) => this.saveRefuel(e));
+            }
+        }
+
+        // Inicializa a aplicação
+        const app = new App();
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>

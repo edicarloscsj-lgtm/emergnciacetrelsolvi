@@ -1,114 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR" class="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sige - Gestão de Emergência e Inspeções</title>
-    
-    <!-- Ícones do Navegador e Celular -->
-    <link rel="icon" type="image/png" href="./logo.png">
-    <link rel="apple-touch-icon" href="./logo.png">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
-                            600: '#16a34a', 700: '#15803d', 900: '#14532d',
-                        },
-                        petro: { yellow: '#FFD700', green: '#008000' }, // Cores inspiradas na PetroReconcavo
-                        darkbg: '#0f172a', darkcard: '#1e293b'
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Bibliotecas -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
-    <style>
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #16a34a; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .view-section { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
-        .view-section.active { display: block; opacity: 1; }
-        .input-base {
-            width: 100%; padding: 0.6rem; border-radius: 0.375rem; border: 1px solid #cbd5e1;
-            background-color: #ffffff; color: #0f172a; outline: none; transition: all 0.2s;
-        }
-        .input-base:focus { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
-        .dark .input-base { background-color: #334155; border-color: #475569; color: #f8fafc; }
-        .dark .input-base:focus { border-color: #4ade80; }
-        
-        /* Custom File Input */
-        input[type="file"]::file-selector-button {
-            padding: 0.5rem 1rem; border-radius: 0.25rem; border: none;
-            background-color: #16a34a; color: white; cursor: pointer; transition: background-color 0.2s;
-        }
-        input[type="file"]::file-selector-button:hover { background-color: #15803d; }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-200 h-screen overflow-hidden flex flex-col md:flex-row">
-
-    <!-- SPLASH SCREEN -->
-    <div id="splash-screen" class="fixed inset-0 bg-brand-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
-        <div class="bg-white p-4 rounded-full mb-4 shadow-lg w-40 h-40 flex items-center justify-center overflow-hidden">
-            <img src="./logo.png" alt="Logo Cetrel Solví" class="w-full h-full object-contain">
-        </div>
-        <h1 class="text-3xl font-extrabold tracking-wider text-white mt-2">SIGE</h1>
-        <p class="text-brand-100 mt-1 font-medium tracking-wide">Gestão de Emergência e Inspeções</p>
-        <div class="loader mt-8 border-t-white"></div>
-        <p class="text-sm mt-4 text-brand-100/70" id="splash-status">Carregando módulos operacionais...</p>
-    </div>
-
-    <!-- TELA DE LOGIN -->
-    <div id="view-login" class="view-section absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 overflow-y-auto">
-        <div class="max-w-md w-full bg-white dark:bg-darkcard rounded-2xl shadow-2xl overflow-hidden my-8">
-            <div class="bg-gradient-to-r from-brand-800 to-brand-600 p-8 text-center text-white relative">
-                <div class="absolute top-4 right-4 flex gap-2">
-                    <span class="w-3 h-3 rounded-full bg-petro-yellow"></span>
-                    <span class="w-3 h-3 rounded-full bg-petro-green"></span>
-                </div>
-                <div class="w-28 h-28 mx-auto mb-4 bg-white rounded-full p-2 shadow-md flex items-center justify-center">
-                    <img src="./logo.png" alt="Logo Cetrel Solví" class="w-full h-full object-contain">
-                </div>
-                <h2 class="text-3xl font-bold">Acesso TST</h2>
-                <p class="text-brand-100 text-sm mt-2">Identifique-se para iniciar o plantão</p>
-            </div>
-            <div class="p-8 space-y-6">
-                <form id="login-form" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Perfil</label>
-                        <select id="login-role" class="input-base">
-                            <option value="operador">Técnico de Segurança / Emergência</option>
-                            <option value="admin">Administrador do Sistema</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Equipe da Escala</label>
-                        <select id="login-team" class="input-base">
-                            <option value="Alfa">Equipe Alfa</option>
-                            <option value="Bravo">Equipe Bravo</option>
-                        </select>
-                    </div>
-                    <div id="login-password-group" class="hidden">
-                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Senha Administrativa</label>
-                        <input type="password" id="login-password" placeholder="admin123" class="input-base">
-                    </div>
-                    <div id="login-user-group">
-                        <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Nome / Matrícula</label>
-                        <input type="text" id="login-username" placeholder="Ex: João Silva" required class="input-base">
-                    </div>
+<!-- ... existing code ... -->
                     <button type="submit" class="w-full bg-petro-green hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                         <i data-lucide="log-in" class="w-5 h-5"></i> Iniciar Plantão
                     </button>
@@ -117,23 +7,24 @@
         </div>
     </div>
 
+    <!-- OVERLAY MOBILE -->
+    <div id="mobile-overlay" class="fixed ianset-0 bg-slate-900/60 z-[45] hidden backdrop-blur-sm transition-opacity"></div>
+
     <!-- SIDEBAR -->
-    <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col transition-all z-40 fixed md:relative top-0 h-16 md:h-screen shadow-xl" id="sidebar">
+    <aside class="fixed md:relative top-0 left-0 w-64 md:w-72 h-screen bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 z-50 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none" id="sidebar">
         <!-- Logo e Mobile Toggle -->
         <div class="h-16 bg-slate-950 flex justify-between items-center px-4 shrink-0">
             <div class="flex items-center gap-3 text-white">
-                <div class="bg-white w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center p-1">
-                    <img src="./logo.png" alt="Logo Cetrel Solví" class="w-full h-full object-contain">
-                </div>
+                <div class="bg-brand-600 p-1.5 rounded-lg"><i data-lucide="flame" class="w-5 h-5 text-petro-yellow"></i></div>
                 <span class="font-bold text-xl tracking-wide">SIGE <span class="text-brand-500 text-sm">SMS</span></span>
             </div>
-            <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2">
-                <i data-lucide="menu" class="w-6 h-6"></i>
+            <button id="mobile-close-btn" class="md:hidden text-slate-400 hover:text-white p-2">
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
         
-        <!-- Perfil (Oculto no mobile fechado) -->
-        <div class="p-4 border-b border-slate-800 flex items-center gap-3 hidden md:flex shrink-0" id="sidebar-profile">
+        <!-- Perfil -->
+        <div class="p-4 border-b border-slate-800 flex items-center gap-3 shrink-0" id="sidebar-profile">
             <div class="w-12 h-12 rounded-full bg-brand-700 flex items-center justify-center text-white font-bold text-lg border-2 border-brand-500 shadow-inner" id="user-avatar">?</div>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold text-white truncate" id="user-name-display">Usuário</p>
@@ -142,25 +33,16 @@
         </div>
 
         <!-- Navegação -->
-        <nav id="sidebar-nav" class="flex-1 overflow-y-auto hidden md:block py-4 scrollbar-thin scrollbar-thumb-slate-700">
+        <nav id="sidebar-nav" class="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-slate-700">
             <ul class="space-y-1.5 px-3">
-                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Visão Geral</li>
-                <li><a href="#" data-target="dashboard" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-white bg-brand-600"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a></li>
-                
-                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Operacional</li>
-                <li><a href="#" data-target="activities" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="clipboard-check" class="w-5 h-5 text-blue-400"></i> Atividades</a></li>
-                <li><a href="#" data-target="inspections" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="search-check" class="w-5 h-5 text-green-400"></i> Inspeções (Rotina)</a></li>
-                
-                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Frota</li>
-                <li><a href="#" data-target="vehicles" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="truck" class="w-5 h-5 text-amber-400"></i> Viaturas / Check</a></li>
-                
+<!-- ... existing code ... -->
                 <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6" id="nav-admin-header">Sistema</li>
                 <li id="nav-admin"><a href="#" data-target="admin" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-300"><i data-lucide="settings" class="w-5 h-5"></i> Administração</a></li>
             </ul>
         </nav>
 
         <!-- Footer / Controles -->
-        <div class="p-4 bg-slate-950 hidden md:flex justify-between items-center shrink-0" id="sidebar-footer">
+        <div class="p-4 bg-slate-950 flex justify-between items-center shrink-0" id="sidebar-footer">
             <button id="theme-toggle" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-yellow-400 transition-colors" title="Alternar Tema">
                 <i data-lucide="sun" class="w-5 h-5"></i>
             </button>
@@ -171,403 +53,23 @@
     </aside>
 
     <!-- CONTEÚDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-[calc(100vh-4rem)] md:h-screen mt-16 md:mt-0 relative overflow-hidden bg-slate-100 dark:bg-darkbg">
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scroll-smooth" id="main-scroll">
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden bg-slate-100 dark:bg-darkbg">
+        
+        <!-- MOBILE HEADER (Aparece só no celular) -->
+        <header class="md:hidden h-16 bg-white dark:bg-darkcard border-b dark:border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-sm z-30">
+            <div class="flex items-center gap-3">
+                <img src="./logo.png" alt="Logo" class="w-8 h-8 object-contain">
+                <span class="font-bold text-lg text-slate-800 dark:text-white">SIGE SMS</span>
+            </div>
+            <button id="mobile-menu-btn" class="text-slate-600 dark:text-slate-300 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scroll-smooth w-full max-w-full" id="main-scroll">
             
             <!-- VIEW: DASHBOARD -->
-            <div id="view-dashboard" class="view-section active space-y-6 max-w-7xl mx-auto">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Painel Operacional</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400" id="dash-date">Resumo do Plantão</p>
-                    </div>
-                    <button onclick="app.syncAll()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition-all">
-                        <i data-lucide="refresh-cw" class="w-4 h-4" id="sync-icon"></i> Sincronizar Tudo
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <!-- Cards de Resumo -->
-                    <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Atividades Totais</p>
-                        <h3 class="text-3xl font-bold mt-2" id="kpi-ativ-total">0</h3>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Insp. Pendentes/Andamento</p>
-                        <h3 class="text-3xl font-bold mt-2" id="kpi-insp-pendente">0</h3>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border-l-4 border-green-500">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Insp. Concluídas</p>
-                        <h3 class="text-3xl font-bold mt-2" id="kpi-insp-concluida">0</h3>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm border-l-4 border-amber-500">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Registros Viaturas</p>
-                        <h3 class="text-3xl font-bold mt-2" id="kpi-viaturas">0</h3>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-4 flex items-center gap-2"><i data-lucide="bar-chart-2" class="text-brand-500"></i> Status das Inspeções</h3>
-                        <div class="h-64"><canvas id="chartStatus"></canvas></div>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-5 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-4 flex items-center gap-2"><i data-lucide="map-pin" class="text-brand-500"></i> Registros por Área Principal</h3>
-                        <div class="h-64"><canvas id="chartAreas"></canvas></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: ATIVIDADES -->
-            <div id="view-activities" class="view-section space-y-6 max-w-7xl mx-auto">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="clipboard-check" class="text-blue-500"></i> Gestão de Atividades</h2>
-                    <button onclick="app.openForm('activity')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 w-full sm:w-auto justify-center">
-                        <i data-lucide="plus"></i> Nova Atividade
-                    </button>
-                </div>
-
-                <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left whitespace-nowrap">
-                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm">
-                                <tr>
-                                    <th class="p-4 font-semibold">Nº / Tipo</th>
-                                    <th class="p-4 font-semibold">Local (Área/Estação)</th>
-                                    <th class="p-4 font-semibold">Status</th>
-                                    <th class="p-4 font-semibold">Data Progr.</th>
-                                    <th class="p-4 font-semibold text-center">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-activities" class="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
-                                <!-- JS Populates -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="empty-activities" class="hidden p-8 text-center text-slate-500">
-                        <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
-                        <p>Nenhuma atividade registrada no plantão.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: FORMULÁRIO ATIVIDADE -->
-            <div id="view-form-activity" class="view-section max-w-3xl mx-auto">
-                <button onclick="app.navigate('activities')" class="mb-4 text-slate-500 hover:text-brand-600 flex items-center gap-1 font-medium"><i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar</button>
-                <div class="bg-white dark:bg-darkcard rounded-xl shadow-lg p-6 md:p-8 border-t-4 border-blue-500">
-                    <h2 class="text-xl font-bold mb-6" id="title-form-activity">Registrar Atividade</h2>
-                    
-                    <form id="form-activity" class="space-y-5">
-                        <input type="hidden" id="act-id">
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Nº da Atividade</label>
-                                <input type="text" id="act-num" placeholder="Opcional ou Auto" class="input-base bg-slate-50">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Tipo da Atividade <span class="text-red-500">*</span></label>
-                                <select id="act-type" required class="input-base">
-                                    <option value="Acompanhamento">Acompanhamento</option>
-                                    <option value="Auditoria">Auditoria / Inspeção Geral</option>
-                                    <option value="Treinamento">Treinamento / Diálogo</option>
-                                    <option value="Atendimento">Atendimento à Emergência</option>
-                                    <option value="Manutenção">Apoio a Manutenção</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Descrição Breve <span class="text-red-500">*</span></label>
-                            <input type="text" id="act-desc" required placeholder="Ex: Acompanhamento de espaço confinado" class="input-base">
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Área <span class="text-red-500">*</span></label>
-                                <select id="act-area" required class="input-base" onchange="app.updateStations('act-area', 'act-station')"></select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Estação / Local <span class="text-red-500">*</span></label>
-                                <select id="act-station" required class="input-base"></select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Data Programada <span class="text-red-500">*</span></label>
-                                <input type="date" id="act-date" required class="input-base">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Status <span class="text-red-500">*</span></label>
-                                <select id="act-status" required class="input-base">
-                                    <option value="Aberta">Aberta / Pendente</option>
-                                    <option value="Em Andamento">Em Andamento</option>
-                                    <option value="Concluída">Concluída</option>
-                                    <option value="Cancelada">Cancelada</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Evidência (Foto)</label>
-                                <input type="file" id="act-photo" accept="image/*" capture="environment" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-slate-700 dark:file:text-slate-300">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Observações / Não Conformidades</label>
-                            <textarea id="act-obs" rows="3" class="input-base" placeholder="Relate detalhes, recomendações..."></textarea>
-                        </div>
-
-                        <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition-colors text-lg flex justify-center items-center gap-2">
-                            <i data-lucide="save"></i> Salvar Atividade
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- VIEW: INSPEÇÕES -->
-            <div id="view-inspections" class="view-section space-y-6 max-w-7xl mx-auto">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="search-check" class="text-brand-500"></i> Inspeções de Equipamentos</h2>
-                    <button onclick="app.openForm('inspection')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 w-full sm:w-auto justify-center">
-                        <i data-lucide="plus"></i> Nova Inspeção
-                    </button>
-                </div>
-
-                <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left whitespace-nowrap">
-                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm">
-                                <tr>
-                                    <th class="p-4 font-semibold">TAG / Equipamento</th>
-                                    <th class="p-4 font-semibold">Local</th>
-                                    <th class="p-4 font-semibold">Frequência</th>
-                                    <th class="p-4 font-semibold">Status</th>
-                                    <th class="p-4 font-semibold text-center">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-inspections" class="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
-                                <!-- JS Populates -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="empty-inspections" class="hidden p-8 text-center text-slate-500">
-                        <i data-lucide="shield-off" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
-                        <p>Nenhuma inspeção de equipamento registrada hoje.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: FORMULÁRIO INSPEÇÃO (Etiqueta PetroReconcavo) -->
-            <div id="view-form-inspection" class="view-section max-w-3xl mx-auto">
-                <button onclick="app.navigate('inspections')" class="mb-4 text-slate-500 hover:text-brand-600 flex items-center gap-1 font-medium"><i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar</button>
-                <div class="bg-white dark:bg-darkcard rounded-xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700 relative">
-                    <!-- Cabeçalho Estilo Etiqueta -->
-                    <div class="bg-petro-green p-4 text-center text-white border-b-4 border-petro-yellow">
-                        <h2 class="text-xl font-bold uppercase tracking-wide">Inspeção de Sistemas e Equipamentos de Emergência</h2>
-                        <p class="text-sm opacity-90">Registro Digital (TAG)</p>
-                    </div>
-                    
-                    <form id="form-inspection" class="p-6 md:p-8 space-y-5">
-                        <input type="hidden" id="insp-id">
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-                            <div>
-                                <label class="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300">Nº da TAG <span class="text-red-500">*</span></label>
-                                <input type="text" id="insp-tag" required placeholder="Ex: 0572" class="input-base text-xl font-bold text-red-600 dark:text-red-400 text-center tracking-widest border-2 border-slate-300 dark:border-slate-600">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300">Frequência <span class="text-red-500">*</span></label>
-                                <select id="insp-freq" required class="input-base font-semibold">
-                                    <option value="Semanal">Semanal</option>
-                                    <option value="Quinzenal">Quinzenal</option>
-                                    <option value="Mensal">Mensal</option>
-                                    <option value="Trimestral">Trimestral</option>
-                                    <option value="Semestral">Semestral</option>
-                                    <option value="Anual">Anual</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300">Equipamento <span class="text-red-500">*</span></label>
-                            <select id="insp-equip" required class="input-base"></select>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Área <span class="text-red-500">*</span></label>
-                                <select id="insp-area" required class="input-base" onchange="app.updateStations('insp-area', 'insp-station')"></select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Estação <span class="text-red-500">*</span></label>
-                                <select id="insp-station" required class="input-base"></select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300">Status da Inspeção <span class="text-red-500">*</span></label>
-                                <select id="insp-status" required class="input-base">
-                                    <option value="Conforme">Conforme (Verde)</option>
-                                    <option value="Não Conforme">Não Conforme (Vermelho)</option>
-                                    <option value="Faltante">Faltante / Em Manutenção</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Foto da Etiqueta/Equipamento</label>
-                                <input type="file" id="insp-photo" accept="image/*" capture="environment" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:file:bg-slate-700 dark:file:text-slate-300">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Observações e Pendências</label>
-                            <textarea id="insp-obs" rows="3" class="input-base" placeholder="Se Não Conforme, descreva o motivo..."></textarea>
-                        </div>
-
-                        <div class="bg-petro-yellow/20 p-4 rounded-lg text-sm text-slate-800 dark:text-slate-200 font-medium text-center mt-6">
-                            <i data-lucide="alert-triangle" class="inline w-5 h-5 text-petro-yellow mr-1"></i> ATENÇÃO! Ao identificar avaria grave, comunique de imediato a área de SMS e Operação.
-                        </div>
-
-                        <button type="submit" class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg transition-colors text-lg mt-4 flex justify-center items-center gap-2">
-                            <i data-lucide="check-circle"></i> Concluir Inspeção
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- VIEW: VIATURAS -->
-            <div id="view-vehicles" class="view-section space-y-6 max-w-7xl mx-auto">
-                <h2 class="text-2xl font-bold flex items-center gap-2 mb-6"><i data-lucide="truck" class="text-amber-500"></i> Controle de Viaturas</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Formulário Checklist -->
-                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm p-6 border-t-4 border-amber-500">
-                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-amber-500"></i> Checklist Diário / Passagem</h3>
-                        <form id="form-checklist" class="space-y-4">
-                            <input type="text" id="chk-vtr" placeholder="Placa / Prefixo (Ex: VTR-01)" required class="input-base uppercase font-bold text-amber-600">
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="number" id="chk-km-in" placeholder="Odômetro Inicial" required class="input-base">
-                                <select id="chk-fuel" required class="input-base">
-                                    <option value="Cheio">Tanque Cheio</option>
-                                    <option value="3/4">3/4</option>
-                                    <option value="1/2">1/2</option>
-                                    <option value="1/4">1/4</option>
-                                    <option value="Reserva">Reserva</option>
-                                </select>
-                            </div>
-
-                            <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
-                                <p class="text-sm font-semibold mb-3">Itens Inspecionados (Marque se OK)</p>
-                                <div class="grid grid-cols-2 gap-y-2 text-sm">
-                                    <label class="flex items-center gap-2"><input type="checkbox" id="c-pneu" class="w-4 h-4 accent-amber-500" checked> Pneus/Estepe</label>
-                                    <label class="flex items-center gap-2"><input type="checkbox" id="c-luz" class="w-4 h-4 accent-amber-500" checked> Faróis/Luzes</label>
-                                    <label class="flex items-center gap-2"><input type="checkbox" id="c-giro" class="w-4 h-4 accent-amber-500" checked> Giroflex/Sirene</label>
-                                    <label class="flex items-center gap-2"><input type="checkbox" id="c-kit" class="w-4 h-4 accent-amber-500" checked> Kit Emergência</label>
-                                    <label class="flex items-center gap-2"><input type="checkbox" id="c-doc" class="w-4 h-4 accent-amber-500" checked> Documentação</label>
-                                    <label class="flex items-center gap-2"><input type="checkbox" id="c-radio" class="w-4 h-4 accent-amber-500" checked> Rádio Com.</label>
-                                </div>
-                            </div>
-                            
-                            <select id="chk-status" required class="input-base font-bold">
-                                <option value="Conforme">Viatura Operacional (Conforme)</option>
-                                <option value="Não Conforme">Viatura com Restrição (Não Conforme)</option>
-                            </select>
-
-                            <textarea id="chk-obs" rows="2" placeholder="Observações/Avarias..." class="input-base"></textarea>
-
-                            <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow transition-colors">Salvar Checklist</button>
-                        </form>
-                    </div>
-
-                    <!-- Formulário Abastecimento -->
-                    <div class="bg-white dark:bg-darkcard rounded-xl shadow-sm p-6 border-t-4 border-indigo-500">
-                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="fuel" class="w-5 h-5 text-indigo-500"></i> Registro de Abastecimento</h3>
-                        <form id="form-refuel" class="space-y-4">
-                            <input type="text" id="ref-vtr" placeholder="Placa / Prefixo" required class="input-base uppercase font-bold">
-                            <input type="text" id="ref-driver" placeholder="Nome do Motorista" required class="input-base">
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs text-slate-500">Quilometragem</label>
-                                    <input type="number" id="ref-km" required class="input-base">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-slate-500">Litros</label>
-                                    <input type="number" step="0.01" id="ref-liters" required class="input-base">
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs text-slate-500">Valor (R$)</label>
-                                    <input type="number" step="0.01" id="ref-value" required class="input-base">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-slate-500">Saldo Cartão (Opcional)</label>
-                                    <input type="number" step="0.01" id="ref-balance" class="input-base">
-                                </div>
-                            </div>
-
-                            <button type="submit" class="w-full py-3 mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow transition-colors">Registrar Abastecimento</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: ADMIN -->
-            <div id="view-admin" class="view-section space-y-6 max-w-7xl mx-auto">
-                <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="settings" class="text-slate-500"></i> Painel Administrativo</h2>
-                
-                <div class="bg-white dark:bg-darkcard p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-bold mb-4 border-b pb-2 dark:border-slate-700">Integração Google Sheets (Exportação)</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        Para enviar dados em tempo real, configure a URL do seu Google Apps Script (GAS) no código. Como alternativa nativa (Offline), você pode exportar todo o histórico do cache local para Excel ou Planilha.
-                    </p>
-                    <div class="flex flex-wrap gap-3">
-                        <button onclick="app.exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
-                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exportar Dados para Excel (.xlsx)
-                        </button>
-                        <a href="https://docs.google.com/spreadsheets/d/1se_-XDwXavPV7hypRbvSBNjMqnzBaj3_YCT8gKglVGQ" target="_blank" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
-                            <i data-lucide="external-link" class="w-4 h-4"></i> Abrir Planilha Base
-                        </a>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-darkcard p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">Estrutura de Áreas Atuais</h3>
-                        <div class="max-h-60 overflow-y-auto pr-2 text-sm" id="admin-areas-list">
-                            <!-- JS Populates -->
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-darkcard p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">Controle de Memória Local</h3>
-                        <ul class="space-y-3 text-sm divide-y dark:divide-slate-700">
-                            <li class="flex justify-between pt-2"><span class="text-slate-500">Atividades em Cache:</span> <span id="admin-c-act" class="font-bold">0</span></li>
-                            <li class="flex justify-between pt-2"><span class="text-slate-500">Inspeções em Cache:</span> <span id="admin-c-insp" class="font-bold">0</span></li>
-                            <li class="flex justify-between pt-2"><span class="text-slate-500">Viaturas em Cache:</span> <span id="admin-c-veh" class="font-bold">0</span></li>
-                        </ul>
-                        <button onclick="app.clearCache()" class="mt-4 w-full py-2 border border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium text-sm">
-                            Apagar Todo o Cache do Aparelho
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Espaço no final para mobile não sobrepor -->
-            <div class="h-20 md:h-8"></div>
-        </div>
-    </main>
-
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-4 md:top-4 md:bottom-auto right-4 md:right-8 bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-20 md:-translate-y-20 opacity-0 transition-all duration-300 z-[9999] flex items-center gap-3 border-l-4">
-        <div id="toast-icon"></div>
-        <span id="toast-msg" class="font-medium text-sm md:text-base">Mensagem</span>
-    </div>
-
-    <script>
+<!-- ... existing code ... -->
         /**
          * CONFIGURAÇÃO E DADOS BASE
          */
@@ -575,225 +77,75 @@
 
         const DEFAULT_CONFIG = {
             areas: {
-                "Sul": ["Nova Cassarongongo (Principal)", "Ilhas", "Gomo", "Gomox3", "NFC", "NFC 15", "Ajax"],
-                "Centro": ["São Roque (Principal)", "Ouro Preto", "Búfalo", "Remanso", "Jacuípe", "São Pedro", "Sussuarana", "Universidade Petro", "Centro Logístico"],
-                "Norte": ["Miranga (Principal)", "Miranga B", "Miranga C", "Miranga EIA"],
-                "Sondas": ["Equipe Itinerante / Apoio"]
-            },
-            equipments: [
-                "Bomba de Incêndio", "Sist. de Detecção e Alarme", "Abrigo de Mangueira / Mangueiras",
-                "Viat/Und Comb Inc. (VCI/UCI)", "Chuveiro e Lava-Olhos", "Conjunto Autônomo",
-                "Biruta / Indicador de Vento", "Extintor de Incêndio", "Hidrante",
-                "Sist. Supressão por Água", "Válvula de Rede de Incêndio", "Portão de Emergência",
-                "Maca / Prancha Rígida", "Roupa de Aproximação", "Sist. Conting. (RTI + Cj. MB)",
-                "Kit de Primeiros Socorros", "Kit de Evasão / Resgate", "Sist. Câmara de Espuma",
+<!-- ... existing code ... -->
                 "Carretinha LGE", "Canhão Monitor Portátil/Fixo", "Detector de Gás", "DEA"
             ]
         };
 
-        // --- MANIFEST EMBUTIDO (Data URI Seguro) ---
-        const manifest = {
-            name: "SIGE - Cetrel Solví", short_name: "SIGE", display: "standalone",
-            background_color: "#0f172a", theme_color: "#16a34a",
-            icons: [{ src: "./logo.png", sizes: "512x512", type: "image/png" }]
-        };
-        const link = document.createElement('link'); link.rel = 'manifest';
-        link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'}));
-        document.head.appendChild(link);
+        // --- MANIFEST EXTERNO (PWA Padrão) ---
+        const linkManifest = document.createElement('link');
+        linkManifest.rel = 'manifest';
+        linkManifest.href = './manifest.json';
+        document.head.appendChild(linkManifest);
 
         // --- REGISTRO DO SERVICE WORKER (Arquivo Externo Obrigatório) ---
         // ATENÇÃO: Navegadores (Chrome/Safari) bloqueiam Service Workers embutidos por segurança.
         // O arquivo sw.js deve existir separadamente no repositório do GitHub.
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Registrado:', reg.scope))
-                    .catch(err => console.log('Erro no SW (Certifique-se que o arquivo sw.js foi criado no GitHub):', err));
-            });
-        }
-
-        class App {
-            constructor() {
-                this.state = { user: null, role: null, team: 'Alfa', theme: localStorage.getItem('sige_theme') || 'light' };
-                this.data = { activities: [], inspections: [], vehicles: [] };
-                this.charts = {};
-            }
-
-            async init() {
-                this.loadData();
-                this.setupTheme();
-                this.populateDropdowns();
-                this.setupListeners();
-                lucide.createIcons();
-
-                // Fake Splash Screen delay
-                setTimeout(() => {
-                    const splash = document.getElementById('splash-screen');
-                    splash.style.opacity = '0';
-                    setTimeout(() => splash.style.display = 'none', 500);
-                    
-                    const session = JSON.parse(localStorage.getItem('sige_session'));
-                    if (session && session.user) {
-                        this.doLogin(session.user, session.role, session.team, false);
-                    } else {
-                        this.showLogin();
-                    }
-                }, 1000);
-            }
-
-            loadData() {
-                const act = localStorage.getItem('sige_act');
-                const insp = localStorage.getItem('sige_insp');
-                const veh = localStorage.getItem('sige_veh');
-                
-                if(act) this.data.activities = JSON.parse(act);
-                if(insp) this.data.inspections = JSON.parse(insp);
-                if(veh) this.data.vehicles = JSON.parse(veh);
-            }
-
-            saveData() {
-                localStorage.setItem('sige_act', JSON.stringify(this.data.activities));
-                localStorage.setItem('sige_insp', JSON.stringify(this.data.inspections));
-                localStorage.setItem('sige_veh', JSON.stringify(this.data.vehicles));
-            }
-
-            // --- AUTENTICAÇÃO ---
-            showLogin() {
-                document.getElementById('view-login').style.display = 'flex';
-                setTimeout(() => document.getElementById('view-login').classList.add('active'), 10);
-            }
-
-            doLogin(username, role, team, save = true) {
-                if (!username.trim()) return this.showToast("Informe seu nome ou matrícula", "error");
-                if (role === 'admin' && document.getElementById('login-password').value !== 'admin123' && save) {
-                    return this.showToast("Senha administrativa incorreta!", "error");
-                }
-                
-                this.state.user = username; this.state.role = role; this.state.team = team;
-                
-                if(save) localStorage.setItem('sige_session', JSON.stringify({ user: username, role, team }));
-
-                document.getElementById('user-name-display').textContent = username;
-                document.getElementById('user-team-display').textContent = `Equipe ${team} • ${role === 'admin'?'Admin':'TST'}`;
-                document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
-
-                // Admin visibility
-                document.getElementById('nav-admin').style.display = role === 'admin' ? 'block' : 'none';
-                document.getElementById('nav-admin-header').style.display = role === 'admin' ? 'block' : 'none';
-
-                document.getElementById('view-login').classList.remove('active');
-                setTimeout(() => document.getElementById('view-login').style.display = 'none', 300);
-                
-                this.navigate('dashboard');
-                if(save) this.showToast(`Plantão iniciado, ${username}!`, "success");
-            }
-
-            passarTurno() {
-                if(confirm("Deseja encerrar o plantão e deslogar? Não se preocupe, os dados permanecem no cache do navegador até serem limpos manualmente.")) {
-                    localStorage.removeItem('sige_session');
-                    location.reload();
-                }
-            }
-
+<!-- ... existing code ... -->
             // --- NAVEGAÇÃO ---
             navigate(viewId) {
                 // Fechar menu mobile se aberto
-                document.getElementById('sidebar-nav').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('translate-x-0');
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('mobile-overlay').classList.add('hidden');
                 
                 // Esconder views
                 document.querySelectorAll('.view-section').forEach(el => {
-                    el.classList.remove('active');
-                    if(el.id !== 'view-login') setTimeout(() => { if(!el.classList.contains('active')) el.style.display = 'none'; }, 200);
-                });
-
-                // Atualizar links ativos
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.classList.remove('bg-brand-600', 'text-white');
-                    link.classList.add('text-slate-300', 'hover:bg-slate-800');
-                });
-                const activeNav = document.querySelector(`[data-target="${viewId}"]`);
-                if(activeNav) {
-                    activeNav.classList.remove('text-slate-300', 'hover:bg-slate-800');
-                    activeNav.classList.add('bg-brand-600', 'text-white');
-                }
-
-                // Mostrar view alvo
-                const targetView = document.getElementById(`view-${viewId}`);
-                if(targetView) {
-                    targetView.style.display = 'block';
-                    setTimeout(() => targetView.classList.add('active'), 50);
-                    document.getElementById('main-scroll').scrollTop = 0;
-                }
-
-                // Renderizações específicas
-                if(viewId === 'dashboard') this.renderDashboard();
-                if(viewId === 'activities') this.renderActivities();
-                if(viewId === 'inspections') this.renderInspections();
-                if(viewId === 'admin') this.renderAdmin();
-            }
-
-            openForm(type, id = null) {
-                if(type === 'activity') {
-                    document.getElementById('form-activity').reset();
-                    document.getElementById('act-date').valueAsDate = new Date();
-                    document.getElementById('act-id').value = id || '';
-                    this.updateStations('act-area', 'act-station');
-                    this.navigate('form-activity');
-                } else if(type === 'inspection') {
-                    document.getElementById('form-inspection').reset();
-                    document.getElementById('insp-id').value = id || '';
-                    this.updateStations('insp-area', 'insp-station');
-                    this.navigate('form-inspection');
-                }
-            }
-
-            // --- FORMS & DROPDOWNS ---
-            populateDropdowns() {
-                const areasHTML = Object.keys(DEFAULT_CONFIG.areas).map(a => `<option value="${a}">${a}</option>`).join('');
-                document.getElementById('act-area').innerHTML = areasHTML;
-                document.getElementById('insp-area').innerHTML = areasHTML;
-                
-                const equipHTML = DEFAULT_CONFIG.equipments.map(e => `<option value="${e}">${e}</option>`).join('');
-                document.getElementById('insp-equip').innerHTML = equipHTML;
-            }
-
-            updateStations(areaId, stationId) {
-                const area = document.getElementById(areaId).value;
-                const stations = DEFAULT_CONFIG.areas[area] || [];
+<!-- ... existing code ... -->
                 document.getElementById(stationId).innerHTML = stations.map(s => `<option value="${s}">${s}</option>`).join('');
             }
 
             async convertToBase64(file) {
                 return new Promise((resolve, reject) => {
-                    if(!file) resolve(null);
+                    if(!file) { resolve(null); return; }
                     const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
                     reader.readAsDataURL(file);
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            // Compressor de Imagem embutido para salvar fotos super leves no Apps Script
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800; // Limita a largura a 800 pixels
+                            const scaleSize = MAX_WIDTH / img.width;
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.6)); // Comprime para 60% da qualidade
+                        };
+                        img.onerror = error => reject(error);
+                    };
+                    reader.onerror = error => reject(error);
                 });
             }
 
             // --- SALVAMENTOS ---
             async saveActivity(e) {
-                e.preventDefault();
-                const id = document.getElementById('act-id').value || `ACT_${Date.now()}`;
-                const fileInput = document.getElementById('act-photo');
-                const photoBase64 = fileInput.files[0] ? await this.convertToBase64(fileInput.files[0]) : null;
-
-                const data = {
-                    id, type: 'atividade',
-                    number: document.getElementById('act-num').value || id,
-                    actType: document.getElementById('act-type').value,
-                    desc: document.getElementById('act-desc').value,
-                    area: document.getElementById('act-area').value,
-                    station: document.getElementById('act-station').value,
-                    dateProg: document.getElementById('act-date').value,
+<!-- ... existing code ... -->
                     status: document.getElementById('act-status').value,
                     obs: document.getElementById('act-obs').value,
                     responsible: this.state.user, team: this.state.team,
                     timestamp: new Date().toISOString()
                 };
-                if(photoBase64) data.photo = "Sim"; // Guarda apenas indicador para não travar LocalStorage
+                
+                const syncData = { ...data };
+                if(photoBase64) {
+                    syncData.photoBase64 = photoBase64; // Envia a foto real (comprimida) para a nuvem
+                    data.photo = "Sim"; // Guarda apenas texto localmente para não estourar a memória do celular
+                }
 
                 const idx = this.data.activities.findIndex(a => a.id === id);
                 if(idx > -1) this.data.activities[idx] = data; else this.data.activities.push(data);
@@ -801,12 +153,16 @@
                 this.saveData();
                 this.showToast('Atividade salva com sucesso!', 'success');
                 this.navigate('activities');
-                this.trySync(data);
+                this.trySync(syncData);
             }
 
             async saveInspection(e) {
                 e.preventDefault();
                 const id = document.getElementById('insp-id').value || `INSP_${Date.now()}`;
+                
+                const fileInput = document.getElementById('insp-photo');
+                const photoBase64 = fileInput.files[0] ? await this.convertToBase64(fileInput.files[0]) : null;
+
                 const data = {
                     id, type: 'inspecao',
                     tag: document.getElementById('insp-tag').value.toUpperCase(),
@@ -820,52 +176,23 @@
                     timestamp: new Date().toISOString()
                 };
 
+                const syncData = { ...data };
+                if(photoBase64) {
+                    syncData.photoBase64 = photoBase64; // Envia a foto real (comprimida) para a nuvem
+                    data.photo = "Sim"; // Guarda apenas texto localmente
+                }
+
                 const idx = this.data.inspections.findIndex(a => a.id === id);
                 if(idx > -1) this.data.inspections[idx] = data; else this.data.inspections.push(data);
                 
                 this.saveData();
                 this.showToast('Inspeção de Emergência Registrada!', 'success');
                 this.navigate('inspections');
-                this.trySync(data);
+                this.trySync(syncData);
             }
 
             saveChecklist(e) {
-                e.preventDefault();
-                const checks = ['c-pneu','c-luz','c-giro','c-kit','c-doc','c-radio'].filter(c=>document.getElementById(c).checked).length;
-                const data = {
-                    id: `CHK_${Date.now()}`, type: 'viatura_checklist',
-                    vtr: document.getElementById('chk-vtr').value,
-                    km: document.getElementById('chk-km-in').value,
-                    fuel: document.getElementById('chk-fuel').value,
-                    status: document.getElementById('chk-status').value,
-                    obs: document.getElementById('chk-obs').value + ` [Itens OK: ${checks}/6]`,
-                    responsible: this.state.user, team: this.state.team,
-                    timestamp: new Date().toISOString()
-                };
-                this.data.vehicles.push(data); this.saveData();
-                this.showToast('Checklist da viatura salvo!', 'success');
-                document.getElementById('form-checklist').reset();
-                this.trySync(data);
-            }
-
-            saveRefuel(e) {
-                e.preventDefault();
-                const data = {
-                    id: `REF_${Date.now()}`, type: 'viatura_abastecimento',
-                    vtr: document.getElementById('ref-vtr').value,
-                    driver: document.getElementById('ref-driver').value,
-                    km: document.getElementById('ref-km').value,
-                    liters: document.getElementById('ref-liters').value,
-                    value: document.getElementById('ref-value').value,
-                    balance: document.getElementById('ref-balance').value,
-                    team: this.state.team, timestamp: new Date().toISOString()
-                };
-                this.data.vehicles.push(data); this.saveData();
-                this.showToast('Abastecimento registrado!', 'success');
-                document.getElementById('form-refuel').reset();
-                this.trySync(data);
-            }
-
+<!-- ... existing code ... -->
             // --- SINCRONIZAÇÃO C/ APP SCRIPT CORRIGIDA ---
             async trySync(payload) {
                 if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
@@ -874,7 +201,7 @@
                 }
                 
                 try {
-                    // text/plain burla o erro de preflight (CORS) da Vercel para o Google Scripts
+                    // text/plain burla o erro de preflight (CORS) da Vercel/GitHub para o Google Scripts
                     await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -883,231 +210,71 @@
                 } catch(e) { console.error('Erro de rede ao sincronizar:', e); }
             }
 
-            syncAll() {
+            async syncAll() {
                 const icon = document.getElementById('sync-icon');
                 icon.classList.add('animate-spin');
                 
                 if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
                     setTimeout(() => {
                         icon.classList.remove('animate-spin');
-                        this.showToast('Cole a URL do Apps Script no código primeiro!', 'error');
+                        this.showToast('URL do Apps Script não configurada!', 'error');
                     }, 1000);
                     return;
                 }
 
-                // Sincroniza todos os itens do cache em lote
-                Promise.all([
-                    ...this.data.activities.map(a => this.trySync(a)),
-                    ...this.data.inspections.map(i => this.trySync(i)),
-                    ...this.data.vehicles.map(v => this.trySync(v))
-                ]).then(() => {
+                try {
+                    // Sincroniza todos os dados pendentes para a planilha
+                    const pushPromises = [
+                        ...this.data.activities.map(a => this.trySync(a)),
+                        ...this.data.inspections.map(i => this.trySync(i)),
+                        ...this.data.vehicles.map(v => this.trySync(v))
+                    ];
+                    await Promise.all(pushPromises);
+                    
+                    // Opcional: Busca dados atuais da nuvem para atualizar o Dashboard (se o Backend permitir GET)
+                    const response = await fetch(GAS_WEB_APP_URL);
+                    const cloudData = await response.json();
+                    
+                    if(cloudData && cloudData.activities) {
+                        this.data.activities = cloudData.activities;
+                        this.data.inspections = cloudData.inspections || [];
+                        this.saveData();
+                        this.renderActivities();
+                        this.renderInspections();
+                    }
+
+                    this.showToast('Sincronização 100% concluída!', 'success');
+                } catch(e) {
+                    console.error('Erro de Sync:', e);
+                    this.showToast('Dados enviados! (Alguns itens falharam na volta)', 'info');
+                } finally {
                     icon.classList.remove('animate-spin');
-                    this.showToast('Sincronização forçada concluída!', 'success');
-                });
-            }
-
-            // --- RENDERIZAÇÕES ---
-            renderDashboard() {
-                document.getElementById('dash-date').textContent = `${new Date().toLocaleDateString('pt-BR')} • ${this.state.team} • ${this.state.user}`;
-                
-                const stats = { actTotal: this.data.activities.length, inspConforme: 0, inspPendente: 0, vehTotal: this.data.vehicles.length };
-                const areaCounts = {};
-                
-                this.data.inspections.forEach(i => {
-                    if(i.status === 'Conforme') stats.inspConforme++; else stats.inspPendente++;
-                    areaCounts[i.area] = (areaCounts[i.area] || 0) + 1;
-                });
-                
-                document.getElementById('kpi-ativ-total').textContent = stats.actTotal;
-                document.getElementById('kpi-insp-concluida').textContent = stats.inspConforme;
-                document.getElementById('kpi-insp-pendente').textContent = stats.inspPendente;
-                document.getElementById('kpi-viaturas').textContent = stats.vehTotal;
-
-                // Gráficos
-                const isDark = document.documentElement.classList.contains('dark');
-                const textColor = isDark ? '#cbd5e1' : '#475569';
-                Chart.defaults.color = textColor;
-
-                if(this.charts.status) this.charts.status.destroy();
-                if(this.charts.areas) this.charts.areas.destroy();
-
-                const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-                this.charts.status = new Chart(ctxStatus, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Conforme', 'Não Conforme / Faltante'],
-                        datasets: [{ data: [stats.inspConforme, stats.inspPendente], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
-                    },
-                    options: { maintainAspectRatio: false, cutout: '70%' }
-                });
-
-                const ctxAreas = document.getElementById('chartAreas').getContext('2d');
-                this.charts.areas = new Chart(ctxAreas, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(areaCounts).length ? Object.keys(areaCounts) : ['Sem dados'],
-                        datasets: [{ label: 'Inspeções', data: Object.keys(areaCounts).length ? Object.values(areaCounts) : [0], backgroundColor: '#FFD700', borderRadius: 4 }]
-                    },
-                    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: isDark?'#334155':'#e2e8f0'} }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
-                });
-            }
-
-            renderActivities() {
-                const tbody = document.getElementById('table-activities');
-                const empty = document.getElementById('empty-activities');
-                tbody.innerHTML = '';
-                
-                if(this.data.activities.length === 0) { empty.classList.remove('hidden'); tbody.parentElement.classList.add('hidden'); return; }
-                empty.classList.add('hidden'); tbody.parentElement.classList.remove('hidden');
-
-                const sorted = [...this.data.activities].reverse();
-                sorted.forEach(a => {
-                    let sColor = a.status === 'Concluída' ? 'text-green-600 bg-green-100' : (a.status === 'Em Andamento' ? 'text-yellow-600 bg-yellow-100' : 'text-slate-600 bg-slate-100');
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <td class="p-4"><p class="font-bold">${a.number}</p><p class="text-xs text-slate-500">${a.actType}</p></td>
-                            <td class="p-4"><p class="font-medium">${a.area}</p><p class="text-xs text-slate-500">${a.station.split('(')[0]}</p></td>
-                            <td class="p-4"><span class="px-2.5 py-1 text-xs font-semibold rounded-full ${sColor}">${a.status}</span></td>
-                            <td class="p-4 text-slate-500 text-sm">${a.dateProg.split('-').reverse().join('/')}</td>
-                            <td class="p-4 text-center"><button class="text-blue-500 hover:text-blue-700" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button></td>
-                        </tr>
-                    `;
-                });
-                lucide.createIcons();
-            }
-
-            renderInspections() {
-                const tbody = document.getElementById('table-inspections');
-                const empty = document.getElementById('empty-inspections');
-                tbody.innerHTML = '';
-                
-                if(this.data.inspections.length === 0) { empty.classList.remove('hidden'); tbody.parentElement.classList.add('hidden'); return; }
-                empty.classList.add('hidden'); tbody.parentElement.classList.remove('hidden');
-
-                const sorted = [...this.data.inspections].reverse();
-                sorted.forEach(i => {
-                    let sColor = i.status === 'Conforme' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <td class="p-4"><p class="font-bold text-red-500">${i.tag}</p><p class="text-xs text-slate-500 max-w-[200px] truncate" title="${i.equip}">${i.equip}</p></td>
-                            <td class="p-4"><p class="font-medium">${i.area}</p><p class="text-xs text-slate-500">${i.station.split('(')[0]}</p></td>
-                            <td class="p-4 text-slate-500 text-sm">${i.freq}</td>
-                            <td class="p-4"><span class="px-2.5 py-1 text-xs font-semibold rounded-full ${sColor}">${i.status}</span></td>
-                            <td class="p-4 text-center"><button class="text-brand-600 hover:text-brand-800" title="Ver Detalhes"><i data-lucide="eye" class="w-4 h-4"></i></button></td>
-                        </tr>
-                    `;
-                });
-                lucide.createIcons();
-            }
-
-            renderAdmin() {
-                document.getElementById('admin-c-act').textContent = this.data.activities.length;
-                document.getElementById('admin-c-insp').textContent = this.data.inspections.length;
-                document.getElementById('admin-c-veh').textContent = this.data.vehicles.length;
-
-                const areasDiv = document.getElementById('admin-areas-list');
-                areasDiv.innerHTML = Object.entries(DEFAULT_CONFIG.areas).map(([a, sts]) => `
-                    <div class="mb-3">
-                        <strong class="text-brand-600 dark:text-brand-400 block border-b dark:border-slate-700 pb-1">${a}</strong>
-                        <ul class="text-slate-600 dark:text-slate-400 mt-1 pl-2 list-disc list-inside">
-                            ${sts.map(s => `<li>${s}</li>`).join('')}
-                        </ul>
-                    </div>
-                `).join('');
-            }
-
-            // --- UTILIDADES ---
-            setupTheme() {
-                if(this.state.theme === 'dark') document.documentElement.classList.add('dark');
-                else document.documentElement.classList.remove('dark');
-            }
-
-            toggleTheme() {
-                this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
-                localStorage.setItem('sige_theme', this.state.theme);
-                this.setupTheme();
-                if(document.getElementById('view-dashboard').classList.contains('active')) this.renderDashboard();
-            }
-
-            showToast(msg, type = 'info') {
-                const toast = document.getElementById('toast');
-                document.getElementById('toast-msg').textContent = msg;
-                const iconHTML = type === 'error' ? '<i data-lucide="x-circle" class="w-6 h-6 text-red-400"></i>' : '<i data-lucide="check-circle" class="w-6 h-6 text-green-400"></i>';
-                document.getElementById('toast-icon').innerHTML = iconHTML;
-                toast.className = `fixed bottom-4 md:top-4 md:bottom-auto right-4 md:right-8 px-5 py-4 rounded-xl shadow-2xl z-[9999] flex items-center gap-3 border-l-4 transition-all duration-300 transform ${type==='error'?'bg-slate-900 border-red-500 text-white':'bg-slate-900 border-green-500 text-white'}`;
-                
-                lucide.createIcons();
-                setTimeout(() => { toast.classList.remove('translate-y-20', 'md:-translate-y-20', 'opacity-0'); }, 10);
-                setTimeout(() => { toast.classList.add('translate-y-20', 'md:-translate-y-20', 'opacity-0'); }, 3500);
-            }
-
-            clearCache() {
-                if(confirm("ATENÇÃO: Isso apagará TODOS os dados salvos neste dispositivo. Se você não exportou, os dados serão perdidos. Continuar?")) {
-                    localStorage.removeItem('sige_act');
-                    localStorage.removeItem('sige_insp');
-                    localStorage.removeItem('sige_veh');
-                    this.data = { activities: [], inspections: [], vehicles: [] };
-                    this.renderAdmin();
-                    this.showToast('Memória limpa com sucesso.', 'success');
                 }
             }
 
-            exportToExcel() {
-                try {
-                    const wb = XLSX.utils.book_new();
-                    
-                    const createSheet = (data, name) => {
-                        if(data.length > 0) {
-                            const ws = XLSX.utils.json_to_sheet(data.map(d => {
-                                let clone = {...d}; delete clone.id; delete clone.photo;
-                                clone.data_hora = new Date(clone.timestamp).toLocaleString('pt-BR');
-                                delete clone.timestamp; return clone;
-                            }));
-                            XLSX.utils.book_append_sheet(wb, ws, name);
-                        }
-                    };
-
-                    createSheet(this.data.activities, "Atividades");
-                    createSheet(this.data.inspections, "Inspeções TAG");
-                    createSheet(this.data.vehicles.filter(v=>v.type==='viatura_checklist'), "Checklist VTR");
-                    createSheet(this.data.vehicles.filter(v=>v.type==='viatura_abastecimento'), "Abastecimento");
-
-                    if(wb.SheetNames.length === 0) return this.showToast('Não há dados para exportar.', 'error');
-
-                    XLSX.writeFile(wb, `SIGE_Exportacao_${new Date().toISOString().split('T')[0]}.xlsx`);
-                    this.showToast('Arquivo Excel gerado!', 'success');
-                } catch(e) { console.error(e); this.showToast('Erro ao exportar.', 'error'); }
-            }
-
-            setupListeners() {
-                document.getElementById('login-role').addEventListener('change', (e) => {
-                    document.getElementById('login-password-group').style.display = e.target.value === 'admin' ? 'block' : 'none';
-                });
-                
-                document.getElementById('login-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.doLogin(document.getElementById('login-username').value, document.getElementById('login-role').value, document.getElementById('login-team').value);
-                });
-
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', (e) => { e.preventDefault(); this.navigate(e.currentTarget.getAttribute('data-target')); });
-                });
-
+            // --- RENDERIZAÇÕES ---
+<!-- ... existing code ... -->
                 document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
-                document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-                    document.getElementById('sidebar-nav').classList.toggle('hidden');
-                    document.getElementById('sidebar-profile').classList.toggle('hidden');
-                });
+                
+                // Controle do Menu Mobile (Drawer Deslizante)
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('mobile-overlay');
+                
+                const openMenu = () => {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    overlay.classList.remove('hidden');
+                };
+                
+                const closeMenu = () => {
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                };
+
+                document.getElementById('mobile-menu-btn').addEventListener('click', openMenu);
+                document.getElementById('mobile-close-btn').addEventListener('click', closeMenu);
+                overlay.addEventListener('click', closeMenu);
 
                 document.getElementById('form-activity').addEventListener('submit', (e) => this.saveActivity(e));
-                document.getElementById('form-inspection').addEventListener('submit', (e) => this.saveInspection(e));
-                document.getElementById('form-checklist').addEventListener('submit', (e) => this.saveChecklist(e));
-                document.getElementById('form-refuel').addEventListener('submit', (e) => this.saveRefuel(e));
-            }
-        }
-
-        const app = new App();
-        window.addEventListener('DOMContentLoaded', () => app.init());
-    </script>
-</body>
-</html>
+<!-- ... existing code ... -->

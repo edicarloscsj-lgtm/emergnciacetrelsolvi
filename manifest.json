@@ -1,0 +1,16 @@
+{
+  "name": "SIGE - Cetrel Solví",
+  "short_name": "SIGE TST",
+  "description": "Gestão de Emergência e Inspeções",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,280 +1,92 @@
-<!-- ... existing code ... -->
-                    <button type="submit" class="w-full bg-petro-green hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                        <i data-lucide="log-in" class="w-5 h-5"></i> Iniciar Plantão
-                    </button>
-                </form>
-            </div>
-        </div>
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sige - Gestão de Emergência e Inspeções</title>
+    
+    <!-- Configurações PWA -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./logo.png">
+    <link rel="apple-touch-icon" href="./logo.png">
+    <meta name="theme-color" content="#16a34a">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
+                        petro: { yellow: '#FFD700', green: '#008000' },
+                        darkbg: '#0f172a', darkcard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Bibliotecas -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #FFD700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .view-section { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .view-section.active { display: block; opacity: 1; }
+        
+        .input-base {
+            width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #cbd5e1;
+            background-color: #ffffff; color: #0f172a; outline: none; transition: all 0.2s;
+        }
+        .input-base:focus { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
+        .dark .input-base { background-color: #334155; border-color: #475569; color: #f8fafc; }
+        .dark .input-base:focus { border-color: #4ade80; }
+        
+        input[type="file"]::file-selector-button {
+            padding: 0.5rem 1rem; border-radius: 0.5rem; border: none;
+            background-color: #16a34a; color: white; cursor: pointer; transition: background-color 0.2s;
+            font-weight: bold;
+        }
+        input[type="file"]::file-selector-button:hover { background-color: #15803d; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 transition-colors duration-200 h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <img src="./logo.png" alt="Logo" class="w-32 h-32 mb-6 object-contain drop-shadow-lg" onerror="this.src='https://placehold.co/200x200/008000/FFFFFF?text=SIGE'">
+        <h1 class="text-4xl font-extrabold tracking-wider text-petro-yellow">SIGE SMS</h1>
+        <p class="text-slate-300 mt-2 font-medium tracking-wide">Gestão de Emergência</p>
+        <div class="loader mt-10"></div>
+        <p class="text-sm mt-6 text-slate-400" id="splash-status">Inicializando sistema offline...</p>
     </div>
 
-    <!-- OVERLAY MOBILE -->
-    <div id="mobile-overlay" class="fixed ianset-0 bg-slate-900/60 z-[45] hidden backdrop-blur-sm transition-opacity"></div>
-
-    <!-- SIDEBAR -->
-    <aside class="fixed md:relative top-0 left-0 w-64 md:w-72 h-screen bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 z-50 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none" id="sidebar">
-        <!-- Logo e Mobile Toggle -->
-        <div class="h-16 bg-slate-950 flex justify-between items-center px-4 shrink-0">
-            <div class="flex items-center gap-3 text-white">
-                <div class="bg-brand-600 p-1.5 rounded-lg"><i data-lucide="flame" class="w-5 h-5 text-petro-yellow"></i></div>
-                <span class="font-bold text-xl tracking-wide">SIGE <span class="text-brand-500 text-sm">SMS</span></span>
+    <!-- TELA DE LOGIN -->
+    <div id="view-login" class="view-section absolute inset-0 z-[60] flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 overflow-y-auto">
+        <div class="max-w-md w-full bg-white dark:bg-darkcard rounded-3xl shadow-2xl overflow-hidden my-auto border border-slate-200 dark:border-slate-800">
+            <div class="bg-petro-green p-8 text-center text-white relative border-b-4 border-petro-yellow">
+                <img src="./logo.png" alt="Logo" class="w-20 h-20 mx-auto mb-4 object-contain bg-white rounded-xl p-2 shadow-inner" onerror="this.src='https://placehold.co/100x100/ffffff/008000?text=S'">
+                <h2 class="text-3xl font-bold">Acesso ao Sistema</h2>
+                <p class="text-brand-100 text-sm mt-2 opacity-90">Identifique-se para iniciar o plantão</p>
             </div>
-            <button id="mobile-close-btn" class="md:hidden text-slate-400 hover:text-white p-2">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-        </div>
-        
-        <!-- Perfil -->
-        <div class="p-4 border-b border-slate-800 flex items-center gap-3 shrink-0" id="sidebar-profile">
-            <div class="w-12 h-12 rounded-full bg-brand-700 flex items-center justify-center text-white font-bold text-lg border-2 border-brand-500 shadow-inner" id="user-avatar">?</div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold text-white truncate" id="user-name-display">Usuário</p>
-                <p class="text-xs text-brand-400 font-medium truncate" id="user-team-display">Equipe Alfa</p>
-            </div>
-        </div>
-
-        <!-- Navegação -->
-        <nav id="sidebar-nav" class="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-slate-700">
-            <ul class="space-y-1.5 px-3">
-<!-- ... existing code ... -->
-                <li class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6" id="nav-admin-header">Sistema</li>
-                <li id="nav-admin"><a href="#" data-target="admin" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-300"><i data-lucide="settings" class="w-5 h-5"></i> Administração</a></li>
-            </ul>
-        </nav>
-
-        <!-- Footer / Controles -->
-        <div class="p-4 bg-slate-950 flex justify-between items-center shrink-0" id="sidebar-footer">
-            <button id="theme-toggle" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-yellow-400 transition-colors" title="Alternar Tema">
-                <i data-lucide="sun" class="w-5 h-5"></i>
-            </button>
-            <button onclick="app.passarTurno()" class="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors font-medium bg-red-400/10 px-3 py-1.5 rounded-lg">
-                <i data-lucide="power" class="w-4 h-4"></i> Encerrar
-            </button>
-        </div>
-    </aside>
-
-    <!-- CONTEÚDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-screen relative overflow-hidden bg-slate-100 dark:bg-darkbg">
-        
-        <!-- MOBILE HEADER (Aparece só no celular) -->
-        <header class="md:hidden h-16 bg-white dark:bg-darkcard border-b dark:border-slate-800 flex items-center justify-between px-4 shrink-0 shadow-sm z-30">
-            <div class="flex items-center gap-3">
-                <img src="./logo.png" alt="Logo" class="w-8 h-8 object-contain">
-                <span class="font-bold text-lg text-slate-800 dark:text-white">SIGE SMS</span>
-            </div>
-            <button id="mobile-menu-btn" class="text-slate-600 dark:text-slate-300 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                <i data-lucide="menu" class="w-6 h-6"></i>
-            </button>
-        </header>
-
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scroll-smooth w-full max-w-full" id="main-scroll">
-            
-            <!-- VIEW: DASHBOARD -->
-<!-- ... existing code ... -->
-        /**
-         * CONFIGURAÇÃO E DADOS BASE
-         */
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz9b0a-6fnvG-Db9lVej1nMO3EhMOl8VOAyY43IAW3U0_TQVbtGH0lRG8anC4KFEJep/exec"; 
-
-        const DEFAULT_CONFIG = {
-            areas: {
-<!-- ... existing code ... -->
-                "Carretinha LGE", "Canhão Monitor Portátil/Fixo", "Detector de Gás", "DEA"
-            ]
-        };
-
-        // --- MANIFEST EXTERNO (PWA Padrão) ---
-        const linkManifest = document.createElement('link');
-        linkManifest.rel = 'manifest';
-        linkManifest.href = './manifest.json';
-        document.head.appendChild(linkManifest);
-
-        // --- REGISTRO DO SERVICE WORKER (Arquivo Externo Obrigatório) ---
-        // ATENÇÃO: Navegadores (Chrome/Safari) bloqueiam Service Workers embutidos por segurança.
-        // O arquivo sw.js deve existir separadamente no repositório do GitHub.
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-<!-- ... existing code ... -->
-            // --- NAVEGAÇÃO ---
-            navigate(viewId) {
-                // Fechar menu mobile se aberto
-                document.getElementById('sidebar').classList.remove('translate-x-0');
-                document.getElementById('sidebar').classList.add('-translate-x-full');
-                document.getElementById('mobile-overlay').classList.add('hidden');
-                
-                // Esconder views
-                document.querySelectorAll('.view-section').forEach(el => {
-<!-- ... existing code ... -->
-                document.getElementById(stationId).innerHTML = stations.map(s => `<option value="${s}">${s}</option>`).join('');
-            }
-
-            async convertToBase64(file) {
-                return new Promise((resolve, reject) => {
-                    if(!file) { resolve(null); return; }
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (event) => {
-                        const img = new Image();
-                        img.src = event.target.result;
-                        img.onload = () => {
-                            // Compressor de Imagem embutido para salvar fotos super leves no Apps Script
-                            const canvas = document.createElement('canvas');
-                            const MAX_WIDTH = 800; // Limita a largura a 800 pixels
-                            const scaleSize = MAX_WIDTH / img.width;
-                            canvas.width = MAX_WIDTH;
-                            canvas.height = img.height * scaleSize;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            resolve(canvas.toDataURL('image/jpeg', 0.6)); // Comprime para 60% da qualidade
-                        };
-                        img.onerror = error => reject(error);
-                    };
-                    reader.onerror = error => reject(error);
-                });
-            }
-
-            // --- SALVAMENTOS ---
-            async saveActivity(e) {
-<!-- ... existing code ... -->
-                    status: document.getElementById('act-status').value,
-                    obs: document.getElementById('act-obs').value,
-                    responsible: this.state.user, team: this.state.team,
-                    timestamp: new Date().toISOString()
-                };
-                
-                const syncData = { ...data };
-                if(photoBase64) {
-                    syncData.photoBase64 = photoBase64; // Envia a foto real (comprimida) para a nuvem
-                    data.photo = "Sim"; // Guarda apenas texto localmente para não estourar a memória do celular
-                }
-
-                const idx = this.data.activities.findIndex(a => a.id === id);
-                if(idx > -1) this.data.activities[idx] = data; else this.data.activities.push(data);
-                
-                this.saveData();
-                this.showToast('Atividade salva com sucesso!', 'success');
-                this.navigate('activities');
-                this.trySync(syncData);
-            }
-
-            async saveInspection(e) {
-                e.preventDefault();
-                const id = document.getElementById('insp-id').value || `INSP_${Date.now()}`;
-                
-                const fileInput = document.getElementById('insp-photo');
-                const photoBase64 = fileInput.files[0] ? await this.convertToBase64(fileInput.files[0]) : null;
-
-                const data = {
-                    id, type: 'inspecao',
-                    tag: document.getElementById('insp-tag').value.toUpperCase(),
-                    freq: document.getElementById('insp-freq').value,
-                    equip: document.getElementById('insp-equip').value,
-                    area: document.getElementById('insp-area').value,
-                    station: document.getElementById('insp-station').value,
-                    status: document.getElementById('insp-status').value,
-                    obs: document.getElementById('insp-obs').value,
-                    responsible: this.state.user, team: this.state.team,
-                    timestamp: new Date().toISOString()
-                };
-
-                const syncData = { ...data };
-                if(photoBase64) {
-                    syncData.photoBase64 = photoBase64; // Envia a foto real (comprimida) para a nuvem
-                    data.photo = "Sim"; // Guarda apenas texto localmente
-                }
-
-                const idx = this.data.inspections.findIndex(a => a.id === id);
-                if(idx > -1) this.data.inspections[idx] = data; else this.data.inspections.push(data);
-                
-                this.saveData();
-                this.showToast('Inspeção de Emergência Registrada!', 'success');
-                this.navigate('inspections');
-                this.trySync(syncData);
-            }
-
-            saveChecklist(e) {
-<!-- ... existing code ... -->
-            // --- SINCRONIZAÇÃO C/ APP SCRIPT CORRIGIDA ---
-            async trySync(payload) {
-                if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
-                    console.warn("GAS_WEB_APP_URL não configurada. Apenas salvo localmente.");
-                    return;
-                }
-                
-                try {
-                    // text/plain burla o erro de preflight (CORS) da Vercel/GitHub para o Google Scripts
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(payload)
-                    });
-                } catch(e) { console.error('Erro de rede ao sincronizar:', e); }
-            }
-
-            async syncAll() {
-                const icon = document.getElementById('sync-icon');
-                icon.classList.add('animate-spin');
-                
-                if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
-                    setTimeout(() => {
-                        icon.classList.remove('animate-spin');
-                        this.showToast('URL do Apps Script não configurada!', 'error');
-                    }, 1000);
-                    return;
-                }
-
-                try {
-                    // Sincroniza todos os dados pendentes para a planilha
-                    const pushPromises = [
-                        ...this.data.activities.map(a => this.trySync(a)),
-                        ...this.data.inspections.map(i => this.trySync(i)),
-                        ...this.data.vehicles.map(v => this.trySync(v))
-                    ];
-                    await Promise.all(pushPromises);
-                    
-                    // Opcional: Busca dados atuais da nuvem para atualizar o Dashboard (se o Backend permitir GET)
-                    const response = await fetch(GAS_WEB_APP_URL);
-                    const cloudData = await response.json();
-                    
-                    if(cloudData && cloudData.activities) {
-                        this.data.activities = cloudData.activities;
-                        this.data.inspections = cloudData.inspections || [];
-                        this.saveData();
-                        this.renderActivities();
-                        this.renderInspections();
-                    }
-
-                    this.showToast('Sincronização 100% concluída!', 'success');
-                } catch(e) {
-                    console.error('Erro de Sync:', e);
-                    this.showToast('Dados enviados! (Alguns itens falharam na volta)', 'info');
-                } finally {
-                    icon.classList.remove('animate-spin');
-                }
-            }
-
-            // --- RENDERIZAÇÕES ---
-<!-- ... existing code ... -->
-                document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
-                
-                // Controle do Menu Mobile (Drawer Deslizante)
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('mobile-overlay');
-                
-                const openMenu = () => {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.classList.add('translate-x-0');
-                    overlay.classList.remove('hidden');
-                };
-                
-                const closeMenu = () => {
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full');
-                    overlay.classList.add('hidden');
-                };
-
-                document.getElementById('mobile-menu-btn').addEventListener('click', openMenu);
-                document.getElementById('mobile-close-btn').addEventListener('click', closeMenu);
-                overlay.addEventListener('click', closeMenu);
-
-                document.getElementById('form-activity').addEventListener('submit', (e) => this.saveActivity(e));
-<!-- ... existing code ... -->
+            <div class="p-6 md:p-8 space-y-6">
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Perfil de Acesso</label>
+                        <select id="login-role" class="input-base">
+                            <option value="operador">Técnico de Segurança / Bombeiro</option>
+                            <option value="admin">Administrador do Sistema</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Equipe de Plantão</label>
+                        <select id="
